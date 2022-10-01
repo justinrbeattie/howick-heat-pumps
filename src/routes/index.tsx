@@ -37,7 +37,7 @@ export const head: DocumentHead = {
   title: 'Welcome to Qwik',
 }; */
 
- import { component$, Resource, useResource$ } from "@builder.io/qwik";
+import { component$, Resource, useResource$ } from "@builder.io/qwik";
 import { useLocation } from "@builder.io/qwik-city";
 import { getContent, RenderContent, getBuilderSearchParams } from "@builder.io/sdk-qwik";
 
