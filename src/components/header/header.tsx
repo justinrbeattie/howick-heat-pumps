@@ -15,12 +15,12 @@ export default component$(() => {
       <ul>
         <li>
           <a href="https://qwik.builder.io/docs/components/overview/" target="_blank">
-            Docsa
+            Docs
           </a>
         </li>
         <li>
           <a href="https://qwik.builder.io/examples/introduction/hello-world/" target="_blank">
-            Examples
+            Exampa
           </a>
         </li>
         <li>
