@@ -56,6 +56,13 @@ const useInvokeContext = () => {
   }
   return ctx.$hostElement$, ctx.$waitOn$, ctx.$renderCtx$, ctx.$subscriber$, ctx;
 };
+const useBindInvokeContext = (callback) => {
+  if (null == callback) {
+    return callback;
+  }
+  const ctx = getInvokeContext();
+  return (...args) => invoke(ctx, callback.bind(void 0, ...args));
+};
 const invoke = (context, fn, ...args) => {
   const previousContext = _context;
   let returnValue;
@@ -162,10 +169,10 @@ const setEvent = (listenerMap, prop, input) => {
 };
 const ensureQrl = (value) => isQrl$1(value) ? value : $(value);
 const getDomListeners = (ctx, containerEl) => {
-  const attributes = ctx.$element$.attributes;
+  const attributes3 = ctx.$element$.attributes;
   const listeners = {};
-  for (let i = 0; i < attributes.length; i++) {
-    const { name, value } = attributes.item(i);
+  for (let i = 0; i < attributes3.length; i++) {
+    const { name, value } = attributes3.item(i);
     if (name.startsWith("on:") || name.startsWith("on-window:") || name.startsWith("on-document:")) {
       let array = listeners[name];
       array || (listeners[name] = array = []);
@@ -191,6 +198,15 @@ const useSequentialScope = () => {
     ctx
   };
 };
+const useCleanupQrl = (unmountFn) => {
+  const { get, set: set2, i, ctx } = useSequentialScope();
+  if (!get) {
+    const el = ctx.$hostElement$;
+    const watch = new Watch(WatchFlagsIsCleanup, i, el, unmountFn, void 0);
+    const elCtx = getContext(el);
+    set2(true), elCtx.$watches$ || (elCtx.$watches$ = []), elCtx.$watches$.push(watch);
+  }
+};
 const useOn = (event, eventQrl) => _useOn(`on-${event}`, eventQrl);
 const _useOn = (eventName, eventQrl) => {
   const invokeCtx = useInvokeContext();
@@ -208,7 +224,7 @@ class JSXNodeImpl {
   }
 }
 const isJSXNode = (n) => n instanceof JSXNodeImpl;
-const Fragment = (props) => props.children;
+const Fragment$1 = (props) => props.children;
 const SkipRender = Symbol("skip render");
 const SSRComment = () => null;
 const Virtual = (props) => props.children;
@@ -246,13 +262,13 @@ const _setProperty = (node, key, value) => {
   }
 };
 const createElement = (doc, expectTag, isSvg) => isSvg ? doc.createElementNS(SVG_NS, expectTag) : doc.createElement(expectTag);
-const insertBefore = (ctx, parent, newChild, refChild) => (ctx.$operations$.push({
+const insertBefore = (ctx, parent2, newChild, refChild) => (ctx.$operations$.push({
   $operation$: directInsertBefore,
-  $args$: [parent, newChild, refChild || null]
+  $args$: [parent2, newChild, refChild || null]
 }), newChild);
-const appendChild = (ctx, parent, newChild) => (ctx.$operations$.push({
+const appendChild = (ctx, parent2, newChild) => (ctx.$operations$.push({
   $operation$: directAppendChild,
-  $args$: [parent, newChild]
+  $args$: [parent2, newChild]
 }), newChild);
 const appendHeadStyle = (ctx, styleTask) => {
   ctx.$containerState$.$styleIds$.add(styleTask.styleId), ctx.$postOperations$.push({
@@ -278,13 +294,13 @@ const removeNode = (ctx, el) => {
   });
 };
 const _removeNode = (el, staticCtx) => {
-  const parent = el.parentElement;
-  if (parent) {
+  const parent2 = el.parentElement;
+  if (parent2) {
     if (1 === el.nodeType || 111 === el.nodeType) {
       const subsManager = staticCtx.$containerState$.$subsManager$;
       cleanupTree(el, staticCtx, subsManager, true);
     }
-    directRemoveChild(parent, el);
+    directRemoveChild(parent2, el);
   }
 };
 const createTemplate = (doc, slotName) => {
@@ -336,8 +352,8 @@ class VirtualElementImpl {
       if (!str) {
         return /* @__PURE__ */ new Map();
       }
-      const attributes = str.split(" ");
-      return new Map(attributes.map((attr) => {
+      const attributes3 = str.split(" ");
+      return new Map(attributes3.map((attr) => {
         const index2 = attr.indexOf("=");
         return index2 >= 0 ? [attr.slice(0, index2), (s = attr.slice(index2 + 1), s.replace(/\+/g, " "))] : [attr, ""];
         var s;
@@ -345,20 +361,20 @@ class VirtualElementImpl {
     })(open.data.slice(3)), open.data.startsWith("qv "), open.__virtual = this;
   }
   insertBefore(node, ref) {
-    const parent = this.parentElement;
-    if (parent) {
+    const parent2 = this.parentElement;
+    if (parent2) {
       const ref2 = ref || this.close;
-      parent.insertBefore(node, ref2);
+      parent2.insertBefore(node, ref2);
     } else {
       this.template.insertBefore(node, ref);
     }
     return node;
   }
   remove() {
-    const parent = this.parentElement;
-    if (parent) {
+    const parent2 = this.parentElement;
+    if (parent2) {
       const ch = Array.from(this.childNodes);
-      this.template.childElementCount, parent.removeChild(this.open), this.template.append(...ch), parent.removeChild(this.close);
+      this.template.childElementCount, parent2.removeChild(this.open), this.template.append(...ch), parent2.removeChild(this.close);
     }
   }
   appendChild(node) {
@@ -398,8 +414,8 @@ class VirtualElementImpl {
     return this.open.compareDocumentPosition(other);
   }
   closest(query) {
-    const parent = this.parentElement;
-    return parent ? parent.closest(query) : null;
+    const parent2 = this.parentElement;
+    return parent2 ? parent2.closest(query) : null;
   }
   querySelectorAll(query) {
     const result = [];
@@ -452,13 +468,13 @@ class VirtualElementImpl {
     return this.open.parentElement;
   }
 }
-const updateComment = (attributes) => `qv ${((map) => {
-  const attributes2 = [];
+const updateComment = (attributes3) => `qv ${((map) => {
+  const attributes4 = [];
   return map.forEach((value, key) => {
     var s;
-    value ? attributes2.push(`${key}=${s = value, s.replace(/ /g, "+")}`) : attributes2.push(`${key}`);
-  }), attributes2.join(" ");
-})(attributes)}`;
+    value ? attributes4.push(`${key}=${s = value, s.replace(/ /g, "+")}`) : attributes4.push(`${key}`);
+  }), attributes4.join(" ");
+})(attributes3)}`;
 const processVirtualNodes = (node) => {
   if (null == node) {
     return null;
@@ -503,26 +519,26 @@ const createContext$1 = (name) => Object.freeze({
   id: fromCamelToKebabCase(name)
 });
 const useContextProvider = (context, newValue) => {
-  const { get, set, ctx } = useSequentialScope();
+  const { get, set: set2, ctx } = useSequentialScope();
   if (void 0 !== get) {
     return;
   }
   const hostElement = ctx.$hostElement$;
   const hostCtx = getContext(hostElement);
   let contexts = hostCtx.$contexts$;
-  contexts || (hostCtx.$contexts$ = contexts = /* @__PURE__ */ new Map()), contexts.set(context.id, newValue), set(true);
+  contexts || (hostCtx.$contexts$ = contexts = /* @__PURE__ */ new Map()), contexts.set(context.id, newValue), set2(true);
 };
 const useContext = (context, defaultValue) => {
-  const { get, set, ctx } = useSequentialScope();
+  const { get, set: set2, ctx } = useSequentialScope();
   if (void 0 !== get) {
     return get;
   }
   const value = resolveContext(context, ctx.$hostElement$, ctx.$renderCtx$);
   if (void 0 !== value) {
-    return set(value);
+    return set2(value);
   }
   if (void 0 !== defaultValue) {
-    return set(defaultValue);
+    return set2(defaultValue);
   }
   throw qError(QError_notFoundContext, context.id);
 };
@@ -720,8 +736,8 @@ class ProcessedJSXNodeImpl {
   }
 }
 const wrapJSX = (element, input) => {
-  const children = void 0 === input ? EMPTY_ARRAY$1 : isArray(input) ? input : [input];
-  const node = new ProcessedJSXNodeImpl(":virtual", {}, children, null);
+  const children3 = void 0 === input ? EMPTY_ARRAY$1 : isArray(input) ? input : [input];
+  const node = new ProcessedJSXNodeImpl(":virtual", {}, children3, null);
   return node.$elm$ = element, node;
 };
 const processData$1 = (node, invocationContext) => {
@@ -749,8 +765,8 @@ const processData$1 = (node, invocationContext) => {
           }
           textType = ":virtual";
         }
-        let children = EMPTY_ARRAY$1;
-        return null != originalChildren ? then(processData$1(originalChildren, invocationContext2), (result) => (void 0 !== result && (children = isArray(result) ? result : [result]), new ProcessedJSXNodeImpl(textType, props, children, key))) : new ProcessedJSXNodeImpl(textType, props, children, key);
+        let children3 = EMPTY_ARRAY$1;
+        return null != originalChildren ? then(processData$1(originalChildren, invocationContext2), (result) => (void 0 !== result && (children3 = isArray(result) ? result : [result]), new ProcessedJSXNodeImpl(textType, props, children3, key))) : new ProcessedJSXNodeImpl(textType, props, children3, key);
       })(node, invocationContext);
     }
     if (isArray(node)) {
@@ -873,10 +889,10 @@ const domToVnode = (node) => {
 };
 const getProps = (node) => {
   const props = {};
-  const attributes = node.attributes;
-  const len = attributes.length;
+  const attributes3 = node.attributes;
+  const len = attributes3.length;
   for (let i = 0; i < len; i++) {
-    const attr = attributes.item(i);
+    const attr = attributes3.item(i);
     const name = attr.name;
     name.includes(":") || (props[name] = "class" === name ? parseDomClass(attr.value) : attr.value);
   }
@@ -987,12 +1003,12 @@ const addVnodes = (ctx, parentElm, before, vnodes, startIdx, endIdx, flags) => {
     promises.push(elm), isPromise(elm) && (hasPromise = true);
   }
   if (hasPromise) {
-    return Promise.all(promises).then((children) => insertChildren(ctx.$static$, parentElm, children, before));
+    return Promise.all(promises).then((children3) => insertChildren(ctx.$static$, parentElm, children3, before));
   }
   insertChildren(ctx.$static$, parentElm, promises, before);
 };
-const insertChildren = (ctx, parentElm, children, before) => {
-  for (const child of children) {
+const insertChildren = (ctx, parentElm, children3, before) => {
+  for (const child of children3) {
     insertBefore(ctx, parentElm, child, before);
   }
 };
@@ -1012,10 +1028,10 @@ const getSlotElement = (ctx, slotMaps, parentEl, slotName) => {
     return templateEl;
   }
   const template = createTemplate(ctx.$doc$, slotName);
-  return ((ctx2, parent, newChild) => {
+  return ((ctx2, parent2, newChild) => {
     ctx2.$operations$.push({
       $operation$: directInsertBefore,
-      $args$: [parent, newChild, parent.firstChild]
+      $args$: [parent2, newChild, parent2.firstChild]
     });
   })(ctx, parentEl, template), slotMaps.templates[slotName] = template, template;
 };
@@ -1047,16 +1063,16 @@ const createElm = (rctx, vnode, flags) => {
     setKey(elm, vnode.$key$);
     const renderQRL = props["q:renderFn"];
     return setComponentProps$1(elCtx, rctx, props), setQId(rctx, elCtx), elCtx.$renderQrl$ = renderQRL, then(renderComponent(rctx, elCtx, flags), () => {
-      let children2 = vnode.$children$;
-      if (0 === children2.length) {
+      let children4 = vnode.$children$;
+      if (0 === children4.length) {
         return elm;
       }
-      1 === children2.length && ":skipRender" === children2[0].$type$ && (children2 = children2[0].$children$);
+      1 === children4.length && ":skipRender" === children4[0].$type$ && (children4 = children4[0].$children$);
       const slotRctx = pushRenderContext(rctx, elCtx);
       const slotMap = getSlotMap(elCtx);
-      const elements = children2.map((ch) => createElm(slotRctx, ch, flags));
+      const elements = children4.map((ch) => createElm(slotRctx, ch, flags));
       return then(promiseAll(elements), () => {
-        for (const node of children2) {
+        for (const node of children4) {
           node.$elm$, appendChild(staticCtx, getSlotElement(staticCtx, slotMap, elm, getSlotName(node)), node.$elm$);
         }
         return elm;
@@ -1089,14 +1105,14 @@ const createElm = (rctx, vnode, flags) => {
   if (void 0 !== props[dangerouslySetInnerHTML]) {
     return elm;
   }
-  let children = vnode.$children$;
-  if (0 === children.length) {
+  let children3 = vnode.$children$;
+  if (0 === children3.length) {
     return elm;
   }
-  1 === children.length && ":skipRender" === children[0].$type$ && (children = children[0].$children$);
-  const promises = children.map((ch) => createElm(rctx, ch, flags));
+  1 === children3.length && ":skipRender" === children3[0].$type$ && (children3 = children3[0].$children$);
+  const promises = children3.map((ch) => createElm(rctx, ch, flags));
   return then(promiseAll(promises), () => {
-    for (const node of children) {
+    for (const node of children3) {
       node.$elm$, appendChild(rctx.$static$, elm, node.$elm$);
     }
     return elm;
@@ -1228,12 +1244,12 @@ const setComponentProps$1 = (ctx, rctx, expectProps) => {
   }
   return ctx.$dirty$;
 };
-const cleanupTree = (parent, rctx, subsManager, stopSlots) => {
-  if (stopSlots && parent.hasAttribute("q:s")) {
-    return void rctx.$rmSlots$.push(parent);
+const cleanupTree = (parent2, rctx, subsManager, stopSlots) => {
+  if (stopSlots && parent2.hasAttribute("q:s")) {
+    return void rctx.$rmSlots$.push(parent2);
   }
-  cleanupElement(parent, subsManager);
-  const ch = getChildren(parent, "elements");
+  cleanupElement(parent2, subsManager);
+  const ch = getChildren(parent2, "elements");
   for (const child of ch) {
     cleanupTree(child, rctx, subsManager, stopSlots);
   }
@@ -1242,25 +1258,25 @@ const cleanupElement = (el, subsManager) => {
   const ctx = tryGetContext(el);
   ctx && cleanupContext(ctx, subsManager);
 };
-const directAppendChild = (parent, child) => {
-  isVirtualElement(child) ? child.appendTo(parent) : parent.appendChild(child);
+const directAppendChild = (parent2, child) => {
+  isVirtualElement(child) ? child.appendTo(parent2) : parent2.appendChild(child);
 };
-const directRemoveChild = (parent, child) => {
-  isVirtualElement(child) ? child.remove() : parent.removeChild(child);
+const directRemoveChild = (parent2, child) => {
+  isVirtualElement(child) ? child.remove() : parent2.removeChild(child);
 };
-const directInsertBefore = (parent, child, ref) => {
-  isVirtualElement(child) ? child.insertBeforeTo(parent, getRootNode(ref)) : parent.insertBefore(child, getRootNode(ref));
+const directInsertBefore = (parent2, child, ref) => {
+  isVirtualElement(child) ? child.insertBeforeTo(parent2, getRootNode(ref)) : parent2.insertBefore(child, getRootNode(ref));
 };
-const createKeyToOldIdx = (children, beginIdx, endIdx) => {
+const createKeyToOldIdx = (children3, beginIdx, endIdx) => {
   const map = {};
   for (let i = beginIdx; i <= endIdx; ++i) {
-    const key = children[i].$key$;
+    const key = children3[i].$key$;
     null != key && (map[key] = i);
   }
   return map;
 };
 const sameVnode = (vnode1, vnode2) => vnode1.$type$ === vnode2.$type$ && vnode1.$key$ === vnode2.$key$;
-const isTagName = (elm, tagName) => elm.$type$ === tagName;
+const isTagName = (elm, tagName4) => elm.$type$ === tagName4;
 const useLexicalScope = () => {
   const context = getInvokeContext();
   let qrl = context.$qrl$;
@@ -1365,8 +1381,8 @@ const sortWatches = (watches) => {
 };
 const CONTAINER_STATE = Symbol("ContainerState");
 const getContainerState = (containerEl) => {
-  let set = containerEl[CONTAINER_STATE];
-  return set || (containerEl[CONTAINER_STATE] = set = createContainerState(containerEl)), set;
+  let set2 = containerEl[CONTAINER_STATE];
+  return set2 || (containerEl[CONTAINER_STATE] = set2 = createContainerState(containerEl)), set2;
 };
 const createContainerState = (containerEl) => {
   const containerState = {
@@ -1391,8 +1407,8 @@ const createSubscriptionManager = (containerState) => {
   const subsToObjs = /* @__PURE__ */ new Map();
   const tryGetLocal = (obj) => (getProxyTarget(obj), objToSubs.get(obj));
   const trackSubToObj = (subscriber, map) => {
-    let set = subsToObjs.get(subscriber);
-    set || subsToObjs.set(subscriber, set = /* @__PURE__ */ new Set()), set.add(map);
+    let set2 = subsToObjs.get(subscriber);
+    set2 || subsToObjs.set(subscriber, set2 = /* @__PURE__ */ new Set()), set2.add(map);
   };
   const manager = {
     $tryGetLocal$: tryGetLocal,
@@ -1551,10 +1567,10 @@ const _pauseFromContexts = async (allContexts, containerState) => {
     flags > 0 && subsObj.push({
       subscriber: "$",
       data: flags
-    }), getProxySubs(proxy).forEach((set, key) => {
+    }), getProxySubs(proxy).forEach((set2, key) => {
       isNode(key) && isVirtualElement(key) && !collector.$elements$.includes(key) || subsObj.push({
         subscriber: key,
-        data: set ? Array.from(set) : null
+        data: set2 ? Array.from(set2) : null
       });
     }), subsObj.length > 0 && subsMap.set(obj, subsObj);
   }), objs.sort((a2, b) => (subsMap.has(a2) ? 0 : 1) - (subsMap.has(b) ? 0 : 1));
@@ -1596,7 +1612,7 @@ const _pauseFromContexts = async (allContexts, containerState) => {
       case "boolean":
         return obj;
       default:
-        const value = serializeValue(obj, getObjId, containerState);
+        const value = serializeValue$1(obj, getObjId, containerState);
         if (void 0 !== value) {
           return value;
         }
@@ -1668,9 +1684,9 @@ const _pauseFromContexts = async (allContexts, containerState) => {
     mode: canRender ? "render" : "listeners"
   };
 };
-const getNodesInScope = (parent, predicate) => {
-  predicate(parent);
-  const walker = parent.ownerDocument.createTreeWalker(parent, 129, {
+const getNodesInScope = (parent2, predicate) => {
+  predicate(parent2);
+  const walker = parent2.ownerDocument.createTreeWalker(parent2, 129, {
     acceptNode: (node) => isContainer(node) ? 2 : predicate(node) ? 1 : 3
   });
   const pars = [];
@@ -1844,7 +1860,7 @@ const WatchFlagsIsDirty = 4;
 const WatchFlagsIsCleanup = 8;
 const WatchFlagsIsResource = 16;
 const useWatchQrl = (qrl, opts) => {
-  const { get, set, ctx, i } = useSequentialScope();
+  const { get, set: set2, ctx, i } = useSequentialScope();
   if (get) {
     return;
   }
@@ -1852,11 +1868,11 @@ const useWatchQrl = (qrl, opts) => {
   const containerState = ctx.$renderCtx$.$static$.$containerState$;
   const watch = new Watch(WatchFlagsIsDirty | WatchFlagsIsWatch, i, el, qrl, void 0);
   const elCtx = getContext(el);
-  set(true), qrl.$resolveLazy$(containerState.$containerEl$), elCtx.$watches$ || (elCtx.$watches$ = []), elCtx.$watches$.push(watch), waitAndRun(ctx, () => runSubscriber(watch, containerState, ctx.$renderCtx$)), isServer$1() && useRunWatch(watch, opts == null ? void 0 : opts.eagerness);
+  set2(true), qrl.$resolveLazy$(containerState.$containerEl$), elCtx.$watches$ || (elCtx.$watches$ = []), elCtx.$watches$.push(watch), waitAndRun(ctx, () => runSubscriber(watch, containerState, ctx.$renderCtx$)), isServer$1() && useRunWatch(watch, opts == null ? void 0 : opts.eagerness);
 };
 const useClientEffectQrl = (qrl, opts) => {
   var _a2;
-  const { get, set, i, ctx } = useSequentialScope();
+  const { get, set: set2, i, ctx } = useSequentialScope();
   if (get) {
     return;
   }
@@ -1865,7 +1881,7 @@ const useClientEffectQrl = (qrl, opts) => {
   const eagerness = (_a2 = opts == null ? void 0 : opts.eagerness) != null ? _a2 : "visible";
   const elCtx = getContext(el);
   const containerState = ctx.$renderCtx$.$static$.$containerState$;
-  set(true), elCtx.$watches$ || (elCtx.$watches$ = []), elCtx.$watches$.push(watch), useRunWatch(watch, eagerness), isServer$1() || (qrl.$resolveLazy$(containerState.$containerEl$), notifyWatch(watch, containerState));
+  set2(true), elCtx.$watches$ || (elCtx.$watches$ = []), elCtx.$watches$.push(watch), useRunWatch(watch, eagerness), isServer$1() || (qrl.$resolveLazy$(containerState.$containerEl$), notifyWatch(watch, containerState));
 };
 const isResourceWatch = (watch) => !!watch.$resource$;
 const runSubscriber = (watch, containerState, rctx) => (watch.$flags$, isResourceWatch(watch) ? runResource(watch, containerState) : runWatch(watch, containerState, rctx));
@@ -1964,6 +1980,41 @@ class Watch {
     this.$flags$ = $flags$, this.$index$ = $index$, this.$el$ = $el$, this.$qrl$ = $qrl$, this.$resource$ = $resource$;
   }
 }
+const useResourceQrl = (qrl, opts) => {
+  const { get, set: set2, i, ctx } = useSequentialScope();
+  if (null != get) {
+    return get;
+  }
+  const containerState = ctx.$renderCtx$.$static$.$containerState$;
+  const resource = createResourceReturn(containerState, opts);
+  const el = ctx.$hostElement$;
+  const watch = new Watch(WatchFlagsIsDirty | WatchFlagsIsResource, i, el, qrl, resource);
+  const previousWait = Promise.all(ctx.$waitOn$.slice());
+  const elCtx = getContext(el);
+  return runResource(watch, containerState, previousWait), elCtx.$watches$ || (elCtx.$watches$ = []), elCtx.$watches$.push(watch), set2(resource), resource;
+};
+const Resource = (props) => {
+  if (props.onRejected && (props.value.promise.catch(() => {
+  }), "rejected" === props.value.state)) {
+    return props.onRejected(props.value.error);
+  }
+  if (props.onPending) {
+    const state = props.value.state;
+    if ("pending" === state) {
+      return props.onPending();
+    }
+    if ("resolved" === state) {
+      return props.onResolved(props.value.resolved);
+    }
+    if ("rejected" === state) {
+      throw props.value.error;
+    }
+  }
+  const promise = props.value.promise.then(useBindInvokeContext(props.onResolved), useBindInvokeContext(props.onRejected));
+  return jsx(Fragment$1, {
+    children: promise
+  });
+};
 const _createResourceReturn = (opts) => ({
   __brand: "resource",
   promise: void 0,
@@ -1972,6 +2023,10 @@ const _createResourceReturn = (opts) => ({
   state: "pending",
   timeout: opts == null ? void 0 : opts.timeout
 });
+const createResourceReturn = (containerState, opts, initialPromise) => {
+  const result = _createResourceReturn(opts);
+  return result.promise = initialPromise, createProxy(result, containerState, 0, void 0);
+};
 const isResourceReturn = (obj) => isObject(obj) && "resource" === obj.__brand;
 const UNDEFINED_PREFIX = "";
 const QRLSerializer = {
@@ -2084,8 +2139,8 @@ const ComponentSerializer = {
     const qrl = parseQRL(qrlString, containerState.$containerEl$);
     return componentQrl(qrl);
   },
-  fill: (component, getObject) => {
-    const [qrl] = component[SERIALIZABLE_STATE];
+  fill: (component3, getObject) => {
+    const [qrl] = component3[SERIALIZABLE_STATE];
     qrl.$capture$ && qrl.$capture$.length > 0 && (qrl.$captureRef$ = qrl.$capture$.map(getObject), qrl.$capture$ = null);
   }
 };
@@ -2099,7 +2154,7 @@ const serializers = [QRLSerializer, WatchSerializer, ResourceSerializer, URLSeri
   },
   fill: void 0
 }];
-const serializeValue = (obj, getObjID, containerState) => {
+const serializeValue$1 = (obj, getObjID, containerState) => {
   for (const s of serializers) {
     if (s.test(obj)) {
       let value = s.prefix;
@@ -2212,9 +2267,9 @@ const resumeIfNeeded = (containerEl) => {
     script.remove();
     const containerState = getContainerState(containerEl2);
     ((containerEl3, containerState2) => {
-      const head2 = containerEl3.ownerDocument.head;
+      const head = containerEl3.ownerDocument.head;
       containerEl3.querySelectorAll("style[q\\:style]").forEach((el2) => {
-        containerState2.$styleIds$.add(directGetAttribute(el2, "q:style")), head2.appendChild(el2);
+        containerState2.$styleIds$.add(directGetAttribute(el2, "q:style")), head.appendChild(el2);
       });
     })(containerEl2, containerState);
     const meta = JSON.parse((script.textContent || "{}").replace(/\\x3C(\/?script)/g, "<$1"));
@@ -2282,8 +2337,8 @@ const resumeIfNeeded = (containerEl) => {
             if (!el2) {
               continue;
             }
-            const set = null === v ? null : new Set(v);
-            converted.set(el2, set);
+            const set2 = null === v ? null : new Set(v);
+            converted.set(el2, set2);
           }
           createProxy(value, containerState2, flags, converted);
         }
@@ -2581,7 +2636,7 @@ const componentQrl = (onRenderQrl) => {
   }
   return QwikComponent[SERIALIZABLE_STATE] = [onRenderQrl], QwikComponent;
 };
-const isQwikComponent = (component) => "function" == typeof component && void 0 !== component[SERIALIZABLE_STATE];
+const isQwikComponent = (component3) => "function" == typeof component3 && void 0 !== component3[SERIALIZABLE_STATE];
 const Slot = (props) => {
   var _a2;
   const name = (_a2 = props.name) != null ? _a2 : "";
@@ -2659,33 +2714,33 @@ const renderNodeVirtual = (node, elCtx, extraNodes, ssrCtx, stream, flags, befor
   });
 };
 const CLOSE_VIRTUAL = "<!--/qv-->";
-const renderVirtualAttributes = (attributes) => {
+const renderVirtualAttributes = (attributes3) => {
   let text = "";
-  for (const prop of Object.keys(attributes)) {
+  for (const prop of Object.keys(attributes3)) {
     if ("children" === prop) {
       continue;
     }
-    const value = attributes[prop];
+    const value = attributes3[prop];
     null != value && (text += " " + ("" === value ? prop : prop + "=" + value));
   }
   return text;
 };
-const renderNodeElementSync = (tagName, attributes, stream) => {
-  if (stream.write("<" + tagName + ((attributes2) => {
+const renderNodeElementSync = (tagName4, attributes3, stream) => {
+  if (stream.write("<" + tagName4 + ((attributes4) => {
     let text = "";
-    for (const prop of Object.keys(attributes2)) {
+    for (const prop of Object.keys(attributes4)) {
       if ("dangerouslySetInnerHTML" === prop) {
         continue;
       }
-      const value = attributes2[prop];
+      const value = attributes4[prop];
       null != value && (text += " " + ("" === value ? prop : prop + '="' + value + '"'));
     }
     return text;
-  })(attributes) + ">"), !!emptyElements[tagName]) {
+  })(attributes3) + ">"), !!emptyElements[tagName4]) {
     return;
   }
-  const innerHTML = attributes.dangerouslySetInnerHTML;
-  null != innerHTML && stream.write(innerHTML), stream.write(`</${tagName}>`);
+  const innerHTML = attributes3.dangerouslySetInnerHTML;
+  null != innerHTML && stream.write(innerHTML), stream.write(`</${tagName4}>`);
 };
 const renderSSRComponent = (ssrCtx, stream, elCtx, node, flags, beforeClose) => (setComponentProps(ssrCtx.rctx, elCtx, node.props), then(executeComponent(ssrCtx.rctx, elCtx), (res) => {
   const hostElement = elCtx.$element$;
@@ -2739,9 +2794,9 @@ const renderQTemplates = (ssrContext, stream) => {
     return processData(nodes, ssrContext, stream, 0, void 0);
   }
 };
-const splitProjectedChildren = (children, ssrCtx) => {
+const splitProjectedChildren = (children3, ssrCtx) => {
   var _a2;
-  const flatChildren = flatVirtualChildren(children, ssrCtx);
+  const flatChildren = flatVirtualChildren(children3, ssrCtx);
   if (null === flatChildren) {
     return;
   }
@@ -2760,20 +2815,20 @@ const createContext = (nodeType) => getContext({
 });
 const renderNode = (node, ssrCtx, stream, flags, beforeClose) => {
   var _a2;
-  const tagName = node.type;
-  if ("string" == typeof tagName) {
+  const tagName4 = node.type;
+  if ("string" == typeof tagName4) {
     const key = node.key;
     const props = node.props;
     const elCtx = createContext(1);
-    const isHead = "head" === tagName;
+    const isHead = "head" === tagName4;
     const hostCtx = ssrCtx.hostCtx;
-    let openingElement = "<" + tagName + ((elCtx2, attributes) => {
+    let openingElement = "<" + tagName4 + ((elCtx2, attributes3) => {
       let text = "";
-      for (const prop of Object.keys(attributes)) {
+      for (const prop of Object.keys(attributes3)) {
         if ("children" === prop || "key" === prop || "class" === prop || "className" === prop || "dangerouslySetInnerHTML" === prop) {
           continue;
         }
-        const value = attributes[prop];
+        const value = attributes3[prop];
         if ("ref" === prop) {
           value.current = elCtx2.$element$;
           continue;
@@ -2804,14 +2859,14 @@ const renderNode = (node, ssrCtx, stream, flags, beforeClose) => {
       const newID = getNextIndex(ssrCtx.rctx);
       openingElement += ' q:id="' + newID + '"', elCtx.$id$ = newID, ssrCtx.$contexts$.push(elCtx);
     }
-    if (1 & flags && (openingElement += " q:head"), openingElement += ">", stream.write(openingElement), emptyElements[tagName]) {
+    if (1 & flags && (openingElement += " q:head"), openingElement += ">", stream.write(openingElement), emptyElements[tagName4]) {
       return;
     }
     const innerHTML = props.dangerouslySetInnerHTML;
     if (null != innerHTML) {
-      return stream.write(String(innerHTML)), void stream.write(`</${tagName}>`);
+      return stream.write(String(innerHTML)), void stream.write(`</${tagName4}>`);
     }
-    isHead || (flags &= -2), "html" === tagName ? flags |= 4 : flags &= -5;
+    isHead || (flags &= -2), "html" === tagName4 ? flags |= 4 : flags &= -5;
     const promise = processData(props.children, ssrCtx, stream, flags);
     return then(promise, () => {
       if (isHead) {
@@ -2822,20 +2877,20 @@ const renderNode = (node, ssrCtx, stream, flags, beforeClose) => {
       }
       if (beforeClose) {
         return then(beforeClose(stream), () => {
-          stream.write(`</${tagName}>`);
+          stream.write(`</${tagName4}>`);
         });
       }
-      stream.write(`</${tagName}>`);
+      stream.write(`</${tagName4}>`);
     });
   }
-  if (tagName === Virtual) {
+  if (tagName4 === Virtual) {
     const elCtx = createContext(111);
     return renderNodeVirtual(node, elCtx, void 0, ssrCtx, stream, flags, beforeClose);
   }
-  if (tagName === SSRComment) {
+  if (tagName4 === SSRComment) {
     return void stream.write("<!--" + node.props.data + "-->");
   }
-  if (tagName === InternalSSRStream) {
+  if (tagName4 === InternalSSRStream) {
     return (async (node2, ssrCtx2, stream2, flags2) => {
       stream2.write("<!--qkssr-f-->");
       const generator = node2.props.children;
@@ -2858,7 +2913,7 @@ const renderNode = (node, ssrCtx, stream, flags, beforeClose) => {
       }
     })(node, ssrCtx, stream, flags);
   }
-  const res = invoke(ssrCtx.invocationContext, tagName, node.props, node.key);
+  const res = invoke(ssrCtx.invocationContext, tagName4, node.props, node.key);
   return processData(res, ssrCtx, stream, flags, beforeClose);
 };
 const processData = (node, ssrCtx, stream, flags, beforeClose) => {
@@ -2878,22 +2933,22 @@ const processData = (node, ssrCtx, stream, flags, beforeClose) => {
     }
   }
 };
-function walkChildren(children, ssrContext, stream, flags) {
-  if (null == children) {
+function walkChildren(children3, ssrContext, stream, flags) {
+  if (null == children3) {
     return;
   }
-  if (!isArray(children)) {
-    return processData(children, ssrContext, stream, flags);
+  if (!isArray(children3)) {
+    return processData(children3, ssrContext, stream, flags);
   }
-  if (1 === children.length) {
-    return processData(children[0], ssrContext, stream, flags);
+  if (1 === children3.length) {
+    return processData(children3[0], ssrContext, stream, flags);
   }
-  if (0 === children.length) {
+  if (0 === children3.length) {
     return;
   }
   let currentIndex = 0;
   const buffers = [];
-  return children.reduce((prevPromise, child, index2) => {
+  return children3.reduce((prevPromise, child, index2) => {
     const buffer = [];
     buffers.push(buffer);
     const rendered = processData(child, ssrContext, prevPromise ? {
@@ -2906,11 +2961,11 @@ function walkChildren(children, ssrContext, stream, flags) {
     })) : void currentIndex++;
   }, void 0);
 }
-const flatVirtualChildren = (children, ssrCtx) => {
-  if (null == children) {
+const flatVirtualChildren = (children3, ssrCtx) => {
+  if (null == children3) {
     return null;
   }
-  const result = _flatVirtualChildren(children, ssrCtx);
+  const result = _flatVirtualChildren(children3, ssrCtx);
   const nodes = isArray(result) ? result : [result];
   return 0 === nodes.length ? null : nodes;
 };
@@ -2930,18 +2985,18 @@ const stringifyClass = (str) => {
   }
   return output.join(" ");
 };
-const _flatVirtualChildren = (children, ssrCtx) => {
-  if (null == children) {
+const _flatVirtualChildren = (children3, ssrCtx) => {
+  if (null == children3) {
     return null;
   }
-  if (isArray(children)) {
-    return children.flatMap((c) => _flatVirtualChildren(c, ssrCtx));
+  if (isArray(children3)) {
+    return children3.flatMap((c) => _flatVirtualChildren(c, ssrCtx));
   }
-  if (isJSXNode(children) && isFunction(children.type) && children.type !== SSRComment && children.type !== InternalSSRStream && children.type !== Virtual) {
-    const res = invoke(ssrCtx.invocationContext, children.type, children.props, children.key);
+  if (isJSXNode(children3) && isFunction(children3.type) && children3.type !== SSRComment && children3.type !== InternalSSRStream && children3.type !== Virtual) {
+    const res = invoke(ssrCtx.invocationContext, children3.type, children3.props, children3.key);
     return flatVirtualChildren(res, ssrCtx);
   }
-  return children;
+  return children3;
 };
 const setComponentProps = (rctx, ctx, expectProps) => {
   const keys = Object.keys(expectProps);
@@ -3006,31 +3061,34 @@ const escapeAttr = (s) => s.replace(ESCAPE_ATTRIBUTES, (c) => {
 });
 const useStore = (initialState, opts) => {
   var _a2;
-  const { get, set, ctx } = useSequentialScope();
+  const { get, set: set2, ctx } = useSequentialScope();
   if (null != get) {
     return get;
   }
   const value = isFunction(initialState) ? initialState() : initialState;
   if (false === (opts == null ? void 0 : opts.reactive)) {
-    return set(value), value;
+    return set2(value), value;
   }
   {
     const containerState = ctx.$renderCtx$.$static$.$containerState$;
     const newStore = createProxy(value, containerState, ((_a2 = opts == null ? void 0 : opts.recursive) != null ? _a2 : false) ? 1 : 0, void 0);
-    return set(newStore), newStore;
+    return set2(newStore), newStore;
   }
 };
+const useRef = (current) => useStore({
+  current
+});
 function useEnvData(key, defaultValue) {
   var _a2;
   return (_a2 = useInvokeContext().$renderCtx$.$static$.$containerState$.$envData$[key]) != null ? _a2 : defaultValue;
 }
 const STYLE_CACHE = /* @__PURE__ */ new Map();
-const getScopedStyles = (css, scopeId) => {
+const getScopedStyles = (css3, scopeId) => {
   let styleCss = STYLE_CACHE.get(scopeId);
-  return styleCss || STYLE_CACHE.set(scopeId, styleCss = scopeStylesheet(css, scopeId)), styleCss;
+  return styleCss || STYLE_CACHE.set(scopeId, styleCss = scopeStylesheet(css3, scopeId)), styleCss;
 };
-const scopeStylesheet = (css, scopeId) => {
-  const end = css.length;
+const scopeStylesheet = (css3, scopeId) => {
+  const end = css3.length;
   const out = [];
   const stack = [];
   let idx = 0;
@@ -3038,14 +3096,14 @@ const scopeStylesheet = (css, scopeId) => {
   let mode = rule;
   let lastCh = 0;
   for (; idx < end; ) {
-    let ch = css.charCodeAt(idx++);
+    let ch = css3.charCodeAt(idx++);
     ch === BACKSLASH && (idx++, ch = A);
     const arcs = STATE_MACHINE[mode];
     for (let i = 0; i < arcs.length; i++) {
       const arc = arcs[i];
       const [expectLastCh, expectCh, newMode] = arc;
       if ((expectLastCh === lastCh || expectLastCh === ANY || expectLastCh === IDENT && isIdent(lastCh) || expectLastCh === WHITESPACE && isWhiteSpace(lastCh)) && (expectCh === ch || expectCh === ANY || expectCh === IDENT && isIdent(ch) || expectCh === NOT_IDENT && !isIdent(ch) && ch !== DOT || expectCh === WHITESPACE && isWhiteSpace(ch)) && (3 == arc.length || lookAhead(arc))) {
-        if (arc.length > 3 && (ch = css.charCodeAt(idx - 1)), newMode === EXIT || newMode == EXIT_INSERT_SCOPE) {
+        if (arc.length > 3 && (ch = css3.charCodeAt(idx - 1)), newMode === EXIT || newMode == EXIT_INSERT_SCOPE) {
           newMode === EXIT_INSERT_SCOPE && (mode !== starSelector || shouldNotInsertScoping() ? isChainedSelector(ch) || insertScopingSelector(idx - (expectCh == NOT_IDENT ? 1 : expectCh == CLOSE_PARENTHESIS ? 2 : 0)) : (isChainedSelector(ch) ? flush(idx - 2) : insertScopingSelector(idx - 2), lastIdx++)), expectCh === NOT_IDENT && (idx--, ch = lastCh);
           do {
             mode = stack.pop() || rule, mode === pseudoGlobal && (flush(idx - 1), lastIdx++);
@@ -3060,16 +3118,16 @@ const scopeStylesheet = (css, scopeId) => {
   }
   return flush(idx), out.join("");
   function flush(idx2) {
-    out.push(css.substring(lastIdx, idx2)), lastIdx = idx2;
+    out.push(css3.substring(lastIdx, idx2)), lastIdx = idx2;
   }
   function insertScopingSelector(idx2) {
     mode === pseudoGlobal || shouldNotInsertScoping() || (flush(idx2), out.push(".", "\u2B50\uFE0F", scopeId));
   }
   function lookAhead(arc) {
     let prefix = 0;
-    if (css.charCodeAt(idx) === DASH) {
+    if (css3.charCodeAt(idx) === DASH) {
       for (let i = 1; i < 10; i++) {
-        if (css.charCodeAt(idx + i) === DASH) {
+        if (css3.charCodeAt(idx + i) === DASH) {
           prefix = i + 1;
           break;
         }
@@ -3079,7 +3137,7 @@ const scopeStylesheet = (css, scopeId) => {
       for (let arcIndx = 3; arcIndx < arc.length; arcIndx++) {
         const txt = arc[arcIndx];
         for (let i = 0; i < txt.length; i++) {
-          if ((css.charCodeAt(idx + i + prefix) | LOWERCASE) !== txt.charCodeAt(i)) {
+          if ((css3.charCodeAt(idx + i + prefix) | LOWERCASE) !== txt.charCodeAt(i)) {
             continue words;
           }
         }
@@ -3133,7 +3191,7 @@ const useStylesScopedQrl = (styles2) => {
   _useStyles(styles2, getScopedStyles, true);
 };
 const _useStyles = (styleQrl, transform, scoped) => {
-  const { get, set, ctx, i } = useSequentialScope();
+  const { get, set: set2, ctx, i } = useSequentialScope();
   if (get) {
     return get;
   }
@@ -3150,7 +3208,7 @@ const _useStyles = (styleQrl, transform, scoped) => {
   var index2;
   const containerState = renderCtx.$static$.$containerState$;
   const elCtx = getContext(ctx.$hostElement$);
-  if (set(styleId), elCtx.$appendStyles$ || (elCtx.$appendStyles$ = []), elCtx.$scopeIds$ || (elCtx.$scopeIds$ = []), scoped && elCtx.$scopeIds$.push(((styleId2) => "\u2B50\uFE0F" + styleId2)(styleId)), ((containerState2, styleId2) => containerState2.$styleIds$.has(styleId2))(containerState, styleId)) {
+  if (set2(styleId), elCtx.$appendStyles$ || (elCtx.$appendStyles$ = []), elCtx.$scopeIds$ || (elCtx.$scopeIds$ = []), scoped && elCtx.$scopeIds$.push(((styleId2) => "\u2B50\uFE0F" + styleId2)(styleId)), ((containerState2, styleId2) => containerState2.$styleIds$.has(styleId2))(containerState, styleId)) {
     return styleId;
   }
   containerState.$styleIds$.add(styleId);
@@ -3200,9 +3258,9 @@ const QwikLogo = () => /* @__PURE__ */ jsx("svg", {
     })
   ]
 });
-const styles$1 = "header {\n  background: var(--qwik-purple);\n}\nheader {\n  display: flex;\n  background: white;\n  border-bottom: 10px solid var(--qwik-dark-purple);\n}\n\nheader .logo a {\n  display: inline-block;\n  padding: 10px 10px 7px 20px;\n}\n\nheader ul {\n  margin: 0;\n  padding: 3px 10px 0 0;\n  list-style: none;\n  flex: 1;\n  text-align: right;\n}\n\nheader li {\n  display: inline-block;\n  margin: 0;\n  padding: 0;\n}\n\nheader li a {\n  display: inline-block;\n  padding: 15px 10px;\n  text-decoration: none;\n}\n\nheader li a:hover {\n  text-decoration: underline;\n}\n";
+const styles = "header {\n  background: var(--qwik-purple);\n}\nheader {\n  display: flex;\n  background: white;\n  border-bottom: 10px solid var(--qwik-dark-purple);\n}\n\nheader .logo a {\n  display: inline-block;\n  padding: 10px 10px 7px 20px;\n}\n\nheader ul {\n  margin: 0;\n  padding: 3px 10px 0 0;\n  list-style: none;\n  flex: 1;\n  text-align: right;\n}\n\nheader li {\n  display: inline-block;\n  margin: 0;\n  padding: 0;\n}\n\nheader li a {\n  display: inline-block;\n  padding: 15px 10px;\n  text-decoration: none;\n}\n\nheader li a:hover {\n  text-decoration: underline;\n}\n";
 const Header = /* @__PURE__ */ componentQrl(inlinedQrl(() => {
-  useStylesScopedQrl(inlinedQrl(styles$1, "s_N39ca0w8E8Y"));
+  useStylesScopedQrl(inlinedQrl(styles, "s_N39ca0w8E8Y"));
   return /* @__PURE__ */ jsx("header", {
     children: [
       /* @__PURE__ */ jsx("div", {
@@ -3242,7 +3300,7 @@ const Header = /* @__PURE__ */ componentQrl(inlinedQrl(() => {
   });
 }, "s_ceU05TscGYE"));
 const layout = /* @__PURE__ */ componentQrl(inlinedQrl(() => {
-  return /* @__PURE__ */ jsx(Fragment, {
+  return /* @__PURE__ */ jsx(Fragment$1, {
     children: [
       /* @__PURE__ */ jsx("main", {
         children: [
@@ -3267,7 +3325,7 @@ const Layout_ = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.definePrope
   default: layout
 }, Symbol.toStringTag, { value: "Module" }));
 const isServer = true;
-const isBrowser = false;
+const isBrowser$1 = false;
 const ContentContext = /* @__PURE__ */ createContext$1("qc-c");
 const ContentInternalContext = /* @__PURE__ */ createContext$1("qc-ic");
 const DocumentHeadContext = /* @__PURE__ */ createContext$1("qc-h");
@@ -3349,19 +3407,19 @@ const getRouteParams$1 = (paramNames, match) => {
   return params;
 };
 const resolveHead = (endpoint, routeLocation, contentModules) => {
-  const head2 = createDocumentHead();
+  const head = createDocumentHead();
   const headProps = {
     data: endpoint ? endpoint.body : null,
-    head: head2,
+    head,
     ...routeLocation
   };
   for (let i = contentModules.length - 1; i >= 0; i--) {
     const contentModuleHead = contentModules[i] && contentModules[i].head;
     if (contentModuleHead) {
       if (typeof contentModuleHead === "function")
-        resolveDocumentHead(head2, contentModuleHead(headProps));
+        resolveDocumentHead(head, contentModuleHead(headProps));
       else if (typeof contentModuleHead === "object")
-        resolveDocumentHead(head2, contentModuleHead);
+        resolveDocumentHead(head, contentModuleHead);
     }
   }
   return headProps.head;
@@ -3553,10 +3611,10 @@ const QwikCity = /* @__PURE__ */ componentQrl(inlinedQrl(() => {
   useContextProvider(DocumentHeadContext, documentHead);
   useContextProvider(RouteLocationContext, routeLocation);
   useContextProvider(RouteNavigateContext, routeNavigate);
-  useWatchQrl(inlinedQrl(async ({ track }) => {
+  useWatchQrl(inlinedQrl(async ({ track: track2 }) => {
     const [content2, contentInternal2, documentHead2, env2, routeLocation2, routeNavigate2] = useLexicalScope();
     const { routes: routes2, menus: menus2, cacheModules: cacheModules2 } = await Promise.resolve().then(() => _qwikCityPlan);
-    const path = track(routeNavigate2, "path");
+    const path = track2(routeNavigate2, "path");
     const url2 = new URL(path, routeLocation2.href);
     const pathname = url2.pathname;
     const loadRoutePromise = loadRoute$1(routes2, menus2, cacheModules2, pathname);
@@ -3581,7 +3639,7 @@ const QwikCity = /* @__PURE__ */ componentQrl(inlinedQrl(() => {
       documentHead2.meta = resolvedHead.meta;
       documentHead2.styles = resolvedHead.styles;
       documentHead2.title = resolvedHead.title;
-      if (isBrowser)
+      if (isBrowser$1)
         clientNavigate(window, routeNavigate2);
     }
   }, "QwikCity_component_useWatch_AaAlzKH0KlQ", [
@@ -3594,7 +3652,7 @@ const QwikCity = /* @__PURE__ */ componentQrl(inlinedQrl(() => {
   ]));
   return /* @__PURE__ */ jsx(Slot, {});
 }, "QwikCity_component_z1nvHyEppoI"));
-const Link = /* @__PURE__ */ componentQrl(inlinedQrl((props) => {
+/* @__PURE__ */ componentQrl(inlinedQrl((props) => {
   const nav = useNavigate();
   const loc = useLocation();
   const originalHref = props.href;
@@ -3637,303 +3695,2690 @@ const swRegister = '((s,a,r,i)=>{r=(e,t)=>{t=document.querySelector("[q\\\\:base
 const ServiceWorkerRegister = () => jsx("script", {
   dangerouslySetInnerHTML: swRegister
 });
-const index$1 = /* @__PURE__ */ componentQrl(inlinedQrl(() => {
-  return /* @__PURE__ */ jsx("div", {
-    children: [
-      /* @__PURE__ */ jsx("h1", {
-        children: [
-          "Welcome to Qwik ",
-          /* @__PURE__ */ jsx("span", {
-            class: "lightning",
-            children: "\u26A1\uFE0F"
-          })
-        ]
-      }),
-      /* @__PURE__ */ jsx("ul", {
-        children: [
-          /* @__PURE__ */ jsx("li", {
-            children: [
-              "Check out the ",
-              /* @__PURE__ */ jsx("code", {
-                children: "src/routes"
-              }),
-              " directory to get started."
-            ]
-          }),
-          /* @__PURE__ */ jsx("li", {
-            children: [
-              "Add integrations with ",
-              /* @__PURE__ */ jsx("code", {
-                children: "npm run qwik add"
-              }),
-              "."
-            ]
-          }),
-          /* @__PURE__ */ jsx("li", {
-            children: [
-              "More info about development in ",
-              /* @__PURE__ */ jsx("code", {
-                children: "README.md"
-              })
-            ]
-          })
-        ]
-      }),
-      /* @__PURE__ */ jsx("h2", {
-        children: "Commands"
-      }),
-      /* @__PURE__ */ jsx("table", {
-        class: "commands",
-        children: [
-          /* @__PURE__ */ jsx("tr", {
-            children: [
-              /* @__PURE__ */ jsx("td", {
-                children: /* @__PURE__ */ jsx("code", {
-                  children: "npm run dev"
-                })
-              }),
-              /* @__PURE__ */ jsx("td", {
-                children: "Start the dev server and watch for changes."
-              })
-            ]
-          }),
-          /* @__PURE__ */ jsx("tr", {
-            children: [
-              /* @__PURE__ */ jsx("td", {
-                children: /* @__PURE__ */ jsx("code", {
-                  children: "npm run preview"
-                })
-              }),
-              /* @__PURE__ */ jsx("td", {
-                children: "Production build and start preview server."
-              })
-            ]
-          }),
-          /* @__PURE__ */ jsx("tr", {
-            children: [
-              /* @__PURE__ */ jsx("td", {
-                children: /* @__PURE__ */ jsx("code", {
-                  children: "npm run build"
-                })
-              }),
-              /* @__PURE__ */ jsx("td", {
-                children: "Production build."
-              })
-            ]
-          }),
-          /* @__PURE__ */ jsx("tr", {
-            children: [
-              /* @__PURE__ */ jsx("td", {
-                children: /* @__PURE__ */ jsx("code", {
-                  children: "npm run qwik add"
-                })
-              }),
-              /* @__PURE__ */ jsx("td", {
-                children: "Select an integration to add."
-              })
-            ]
-          })
-        ]
-      }),
-      /* @__PURE__ */ jsx("h2", {
-        children: "Add Integrations"
-      }),
-      /* @__PURE__ */ jsx("table", {
-        class: "commands",
-        children: [
-          /* @__PURE__ */ jsx("tr", {
-            children: [
-              /* @__PURE__ */ jsx("td", {
-                children: /* @__PURE__ */ jsx("code", {
-                  children: "npm run qwik add cloudflare-pages"
-                })
-              }),
-              /* @__PURE__ */ jsx("td", {
-                children: /* @__PURE__ */ jsx("a", {
-                  href: "https://developers.cloudflare.com/pages",
-                  target: "_blank",
-                  children: "Cloudflare Pages Server"
-                })
-              })
-            ]
-          }),
-          /* @__PURE__ */ jsx("tr", {
-            children: [
-              /* @__PURE__ */ jsx("td", {
-                children: /* @__PURE__ */ jsx("code", {
-                  children: "npm run qwik add express"
-                })
-              }),
-              /* @__PURE__ */ jsx("td", {
-                children: /* @__PURE__ */ jsx("a", {
-                  href: "https://expressjs.com/",
-                  target: "_blank",
-                  children: "Nodejs Express Server"
-                })
-              })
-            ]
-          }),
-          /* @__PURE__ */ jsx("tr", {
-            children: [
-              /* @__PURE__ */ jsx("td", {
-                children: /* @__PURE__ */ jsx("code", {
-                  children: "npm run qwik add netlify-edge"
-                })
-              }),
-              /* @__PURE__ */ jsx("td", {
-                children: /* @__PURE__ */ jsx("a", {
-                  href: "https://docs.netlify.com/",
-                  target: "_blank",
-                  children: "Netlify Edge Functions"
-                })
-              })
-            ]
-          }),
-          /* @__PURE__ */ jsx("tr", {
-            children: [
-              /* @__PURE__ */ jsx("td", {
-                children: /* @__PURE__ */ jsx("code", {
-                  children: "npm run qwik add static-node"
-                })
-              }),
-              /* @__PURE__ */ jsx("td", {
-                children: /* @__PURE__ */ jsx("a", {
-                  href: "https://qwik.builder.io/qwikcity/static-site-generation/overview/",
-                  target: "_blank",
-                  children: "Static Site Generation (SSG)"
-                })
-              })
-            ]
-          })
-        ]
-      }),
-      /* @__PURE__ */ jsx("h2", {
-        children: "Community"
-      }),
-      /* @__PURE__ */ jsx("ul", {
-        children: [
-          /* @__PURE__ */ jsx("li", {
-            children: [
-              /* @__PURE__ */ jsx("span", {
-                children: "Questions or just want to say hi? "
-              }),
-              /* @__PURE__ */ jsx("a", {
-                href: "https://qwik.builder.io/chat",
-                target: "_blank",
-                children: "Chat on discord!"
-              })
-            ]
-          }),
-          /* @__PURE__ */ jsx("li", {
-            children: [
-              /* @__PURE__ */ jsx("span", {
-                children: "Follow "
-              }),
-              /* @__PURE__ */ jsx("a", {
-                href: "https://twitter.com/QwikDev",
-                target: "_blank",
-                children: "@QwikDev"
-              }),
-              /* @__PURE__ */ jsx("span", {
-                children: " on Twitter"
-              })
-            ]
-          }),
-          /* @__PURE__ */ jsx("li", {
-            children: [
-              /* @__PURE__ */ jsx("span", {
-                children: "Open issues and contribute on "
-              }),
-              /* @__PURE__ */ jsx("a", {
-                href: "https://github.com/BuilderIO/qwik",
-                target: "_blank",
-                children: "Github"
-              })
-            ]
-          })
-        ]
-      }),
-      /* @__PURE__ */ jsx(Link, {
-        class: "mindblow",
-        href: "/flower",
-        children: "Blow my mind \u{1F92F}"
-      })
+const TARGET = "qwik";
+function isBrowser() {
+  return typeof window !== "undefined" && typeof document !== "undefined";
+}
+const registry = {};
+function register(type, info) {
+  let typeList = registry[type];
+  if (!typeList)
+    typeList = registry[type] = [];
+  typeList.push(info);
+  if (isBrowser()) {
+    const message = {
+      type: "builder.register",
+      data: {
+        type,
+        info
+      }
+    };
+    try {
+      parent.postMessage(message, "*");
+      if (parent !== window)
+        window.postMessage(message, "*");
+    } catch (err) {
+      console.debug("Could not postmessage", err);
+    }
+  }
+}
+const registerInsertMenu = () => {
+  register("insertMenu", {
+    name: "_default",
+    default: true,
+    items: [
+      {
+        name: "Box"
+      },
+      {
+        name: "Text"
+      },
+      {
+        name: "Image"
+      },
+      {
+        name: "Columns"
+      },
+      ...[
+        {
+          name: "Core:Section"
+        },
+        {
+          name: "Core:Button"
+        },
+        {
+          name: "Embed"
+        },
+        {
+          name: "Custom Code"
+        }
+      ]
     ]
   });
-}, "s_xYL1qOwPyDI"));
-const head$1 = {
-  title: "Welcome to Qwik"
 };
-const Index = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
-  __proto__: null,
-  default: index$1,
-  head: head$1
-}, Symbol.toStringTag, { value: "Module" }));
-const styles = ".host {\n  display: grid;\n\n  align-items: center;\n  justify-content: center;\n  justify-items: center;\n  --rotation: 135deg;\n  --rotation: 225deg;\n  --size-step: 10px;\n  --odd-color-step: 5;\n  --even-color-step: 5;\n  --center: 12;\n\n  width: 100%;\n  height: 500px;\n\n  contain: strict;\n}\n\ninput {\n  width: 100%;\n}\n\n.square {\n  --size: calc(40px + var(--index) * var(--size-step));\n\n  display: block;\n  width: var(--size);\n  height: var(--size);\n  transform: rotateZ(calc(var(--rotation) * var(--state) * (var(--center) - var(--index))));\n  transition-property: transform, border-color;\n  transition-duration: 5s;\n  transition-timing-function: ease-in-out;\n  grid-area: 1 / 1;\n  background: white;\n  border-width: 2px;\n  border-style: solid;\n  border-color: black;\n  box-sizing: border-box;\n  will-change: transform, border-color;\n\n  contain: strict;\n}\n\n.square.odd {\n  --luminance: calc(1 - calc(calc(var(--index) * var(--odd-color-step)) / 256));\n  background: rgb(\n    calc(172 * var(--luminance)),\n    calc(127 * var(--luminance)),\n    calc(244 * var(--luminance))\n  );\n}\n\n.pride .square:nth-child(12n + 1) {\n  background: #e70000;\n}\n.pride .square:nth-child(12n + 3) {\n  background: #ff8c00;\n}\n.pride .square:nth-child(12n + 5) {\n  background: #ffef00;\n}\n.pride .square:nth-child(12n + 7) {\n  background: #00811f;\n}\n.pride .square:nth-child(12n + 9) {\n  background: #0044ff;\n}\n.pride .square:nth-child(12n + 11) {\n  background: #760089;\n}\n";
-const index = /* @__PURE__ */ componentQrl(inlinedQrl(() => {
-  useStylesScopedQrl(inlinedQrl(styles, "s_p4UiTwsJc7c"));
-  const loc = useLocation();
-  const state = useStore({
-    count: 0,
-    number: 20
+const setupBrowserForEditing = () => {
+  var _a2;
+  if (isBrowser()) {
+    (_a2 = window.parent) == null ? void 0 : _a2.postMessage({
+      type: "builder.sdkInfo",
+      data: {
+        target: TARGET,
+        supportsPatchUpdates: false
+      }
+    }, "*");
+    window.addEventListener("message", ({ data }) => {
+      var _a3, _b;
+      if (data)
+        switch (data.type) {
+          case "builder.evaluate": {
+            const text = data.data.text;
+            const args = data.data.arguments || [];
+            const id = data.data.id;
+            const fn = new Function(text);
+            let result;
+            let error = null;
+            try {
+              result = fn.apply(null, args);
+            } catch (err) {
+              error = err;
+            }
+            if (error)
+              (_a3 = window.parent) == null ? void 0 : _a3.postMessage({
+                type: "builder.evaluateError",
+                data: {
+                  id,
+                  error: error.message
+                }
+              }, "*");
+            else if (result && typeof result.then === "function")
+              result.then((finalResult) => {
+                var _a4;
+                (_a4 = window.parent) == null ? void 0 : _a4.postMessage({
+                  type: "builder.evaluateResult",
+                  data: {
+                    id,
+                    result: finalResult
+                  }
+                }, "*");
+              }).catch(console.error);
+            else
+              (_b = window.parent) == null ? void 0 : _b.postMessage({
+                type: "builder.evaluateResult",
+                data: {
+                  result,
+                  id
+                }
+              }, "*");
+            break;
+          }
+        }
+    });
+  }
+};
+const BuilderContext = createContext$1("Builder");
+function isIframe() {
+  return isBrowser() && window.self !== window.top;
+}
+function isEditing() {
+  return isIframe() && window.location.search.indexOf("builder.frameEditing=") !== -1;
+}
+const SIZES = {
+  small: {
+    min: 320,
+    default: 321,
+    max: 640
+  },
+  medium: {
+    min: 641,
+    default: 642,
+    max: 991
+  },
+  large: {
+    min: 990,
+    default: 991,
+    max: 1200
+  }
+};
+const getMaxWidthQueryForSize = (size) => `@media (max-width: ${SIZES[size].max}px)`;
+function evaluate({ code, context, state, event }) {
+  if (code === "") {
+    console.warn("Skipping evaluation of empty code block.");
+    return;
+  }
+  const builder = {
+    isEditing: isEditing(),
+    isBrowser: isBrowser(),
+    isServer: !isBrowser()
+  };
+  const useReturn = !(code.includes(";") || code.includes(" return ") || code.trim().startsWith("return "));
+  const useCode = useReturn ? `return (${code});` : code;
+  try {
+    return new Function("builder", "Builder", "state", "context", "event", useCode)(builder, builder, state, context, event);
+  } catch (e) {
+    console.warn("Builder custom code error: \n While Evaluating: \n ", useCode, "\n", e.message || e);
+  }
+}
+const set = (obj, _path, value) => {
+  if (Object(obj) !== obj)
+    return obj;
+  const path = Array.isArray(_path) ? _path : _path.toString().match(/[^.[\]]+/g);
+  path.slice(0, -1).reduce((a2, c, i) => Object(a2[c]) === a2[c] ? a2[c] : a2[c] = Math.abs(Number(path[i + 1])) >> 0 === +path[i + 1] ? [] : {}, obj)[path[path.length - 1]] = value;
+  return obj;
+};
+function transformBlock(block) {
+  return block;
+}
+const evaluateBindings = ({ block, context, state }) => {
+  if (!block.bindings)
+    return block;
+  const copied = {
+    ...block,
+    properties: {
+      ...block.properties
+    },
+    actions: {
+      ...block.actions
+    }
+  };
+  for (const binding in block.bindings) {
+    const expression = block.bindings[binding];
+    const value = evaluate({
+      code: expression,
+      state,
+      context
+    });
+    set(copied, binding, value);
+  }
+  return copied;
+};
+function getProcessedBlock({ block, context, shouldEvaluateBindings, state }) {
+  const transformedBlock = transformBlock(block);
+  if (shouldEvaluateBindings)
+    return evaluateBindings({
+      block: transformedBlock,
+      state,
+      context
+    });
+  else
+    return transformedBlock;
+}
+const camelToKebabCase = (string) => string.replace(/([a-z0-9]|(?=[A-Z]))([A-Z])/g, "$1-$2").toLowerCase();
+const convertStyleMaptoCSS = (style) => {
+  const cssProps = Object.entries(style).map(([key, value]) => {
+    if (typeof value === "string")
+      return `${camelToKebabCase(key)}: ${value};`;
   });
-  useClientEffectQrl(inlinedQrl(({ cleanup }) => {
-    const [state2] = useLexicalScope();
-    const timeout = setTimeout(() => state2.count = 1, 500);
-    cleanup(() => clearTimeout(timeout));
-    const internal = setInterval(() => state2.count++, 7e3);
-    cleanup(() => clearInterval(internal));
-  }, "s_V0Y6u0VD1eY", [
+  return cssProps.join("\n");
+};
+const tagName$1 = function tagName(props, state) {
+  return "style";
+};
+const RenderInlinedStyles = (props) => {
+  const state = {
+    tagName: ""
+  };
+  state.tagName = tagName$1();
+  return /* @__PURE__ */ jsx(Fragment$1, {
+    children: /* @__PURE__ */ jsx(state.tagName, {
+      children: props.styles
+    })
+  });
+};
+const RenderInlinedStyles$1 = RenderInlinedStyles;
+const useBlock$1 = function useBlock(props, state) {
+  return getProcessedBlock({
+    block: props.block,
+    state: props.context.state,
+    context: props.context.context,
+    shouldEvaluateBindings: true
+  });
+};
+const css = function css2(props, state) {
+  const styles2 = useBlock$1(props).responsiveStyles;
+  const largeStyles = styles2 == null ? void 0 : styles2.large;
+  const mediumStyles = styles2 == null ? void 0 : styles2.medium;
+  const smallStyles = styles2 == null ? void 0 : styles2.small;
+  return `
+        ${largeStyles ? `.${useBlock$1(props).id} {${convertStyleMaptoCSS(largeStyles)}}` : ""}
+        ${mediumStyles ? `${getMaxWidthQueryForSize("medium")} {
+              .${useBlock$1(props).id} {${convertStyleMaptoCSS(mediumStyles)}}
+            }` : ""}
+        ${smallStyles ? `${getMaxWidthQueryForSize("small")} {
+              .${useBlock$1(props).id} {${convertStyleMaptoCSS(smallStyles)}}
+            }` : ""}
+      }`;
+};
+const BlockStyles = (props) => {
+  return /* @__PURE__ */ jsx(Fragment$1, {
+    children: /* @__PURE__ */ jsx(RenderInlinedStyles$1, {
+      styles: css(props)
+    })
+  });
+};
+const BlockStyles$1 = BlockStyles;
+function capitalizeFirstLetter(string) {
+  return string.charAt(0).toUpperCase() + string.slice(1);
+}
+const getEventHandlerName = (key) => `on${capitalizeFirstLetter(key)}$`;
+function crateEventHandler(value, options) {
+  return inlinedQrl((event) => {
+    const [options2, value2] = useLexicalScope();
+    return evaluate({
+      code: value2,
+      context: options2.context,
+      state: options2.state,
+      event
+    });
+  }, "crateEventHandler_wgxT8Hlq4s8", [
+    options,
+    value
+  ]);
+}
+function getBlockActions(options) {
+  var _a2;
+  const obj = {};
+  const optionActions = (_a2 = options.block.actions) != null ? _a2 : {};
+  for (const key in optionActions) {
+    if (!optionActions.hasOwnProperty(key))
+      continue;
+    const value = optionActions[key];
+    obj[getEventHandlerName(key)] = crateEventHandler(value, options);
+  }
+  return obj;
+}
+function getBlockComponentOptions(block) {
+  var _a2;
+  return {
+    ...(_a2 = block.component) == null ? void 0 : _a2.options,
+    ...block.options,
+    builderBlock: block
+  };
+}
+function getBlockProperties(block) {
+  var _a2;
+  return {
+    ...block.properties,
+    "builder-id": block.id,
+    class: [
+      block.id,
+      "builder-block",
+      block.class,
+      (_a2 = block.properties) == null ? void 0 : _a2.class
+    ].filter(Boolean).join(" ")
+  };
+}
+const convertStyleObject = (obj) => {
+  return obj;
+};
+const sanitizeBlockStyles = (styles2) => styles2;
+const getStyleForTarget = (styles2) => {
+  switch (TARGET) {
+    case "reactNative":
+      return {
+        ...styles2.large ? convertStyleObject(styles2.large) : {},
+        ...styles2.medium ? convertStyleObject(styles2.medium) : {},
+        ...styles2.small ? convertStyleObject(styles2.small) : {}
+      };
+    default:
+      return {
+        ...styles2.large ? convertStyleObject(styles2.large) : {},
+        ...styles2.medium ? {
+          [getMaxWidthQueryForSize("medium")]: convertStyleObject(styles2.medium)
+        } : {},
+        ...styles2.small ? {
+          [getMaxWidthQueryForSize("small")]: convertStyleObject(styles2.small)
+        } : {}
+      };
+  }
+};
+function getBlockStyles(block) {
+  if (!block.responsiveStyles)
+    return {};
+  const styles2 = getStyleForTarget(block.responsiveStyles);
+  const newStyles = sanitizeBlockStyles(styles2);
+  return newStyles;
+}
+function getBlockTag(block) {
+  return block.tagName || "div";
+}
+const EMPTY_HTML_ELEMENTS = [
+  "area",
+  "base",
+  "br",
+  "col",
+  "embed",
+  "hr",
+  "img",
+  "input",
+  "keygen",
+  "link",
+  "meta",
+  "param",
+  "source",
+  "track",
+  "wbr"
+];
+const isEmptyHtmlElement = (tagName4) => {
+  return typeof tagName4 === "string" && EMPTY_HTML_ELEMENTS.includes(tagName4.toLowerCase());
+};
+function markMutable(value) {
+  return mutable(value);
+}
+function markPropsMutable(props) {
+  Object.keys(props).forEach((key) => {
+    props[key] = mutable(props[key]);
+  });
+  return props;
+}
+const RenderComponent = (props) => {
+  return /* @__PURE__ */ jsx(Fragment$1, {
+    children: props.componentRef ? /* @__PURE__ */ jsx(props.componentRef, {
+      ...markPropsMutable(props.componentOptions),
+      children: [
+        (props.blockChildren || []).map(function(child) {
+          return /* @__PURE__ */ jsx(RenderBlock$1, {
+            block: child,
+            context: props.context
+          }, "render-block-" + child.id);
+        }),
+        (props.blockChildren || []).map(function(child) {
+          return /* @__PURE__ */ jsx(BlockStyles$1, {
+            block: child,
+            context: props.context
+          }, "block-style-" + child.id);
+        })
+      ]
+    }) : null
+  });
+};
+const RenderComponent$1 = RenderComponent;
+const RenderRepeatedBlock = /* @__PURE__ */ componentQrl(inlinedQrl((props) => {
+  useContextProvider(BuilderContext, useStore({
+    content: (() => {
+      return props.repeatContext.content;
+    })(),
+    state: (() => {
+      return props.repeatContext.state;
+    })(),
+    context: (() => {
+      return props.repeatContext.context;
+    })(),
+    apiKey: (() => {
+      return props.repeatContext.apiKey;
+    })(),
+    registeredComponents: (() => {
+      return props.repeatContext.registeredComponents;
+    })()
+  }));
+  return /* @__PURE__ */ jsx(RenderBlock$1, {
+    block: props.block,
+    context: props.repeatContext
+  });
+}, "RenderRepeatedBlock_component_nRyVBtbGKc8"));
+const RenderRepeatedBlock$1 = RenderRepeatedBlock;
+const component = function component2(props, state) {
+  var _a2;
+  const componentName = (_a2 = getProcessedBlock({
+    block: props.block,
+    state: props.context.state,
+    context: props.context.context,
+    shouldEvaluateBindings: false
+  }).component) == null ? void 0 : _a2.name;
+  if (!componentName)
+    return null;
+  const ref = props.context.registeredComponents[componentName];
+  if (!ref) {
+    console.warn(`
+          Could not find a registered component named "${componentName}". 
+          If you registered it, is the file that registered it imported by the file that needs to render it?`);
+    return void 0;
+  } else
+    return ref;
+};
+const componentInfo$b = function componentInfo(props, state) {
+  if (component(props)) {
+    const { component: _, ...info } = component(props);
+    return info;
+  } else
+    return void 0;
+};
+const componentRef = function componentRef2(props, state) {
+  var _a2;
+  return (_a2 = component(props)) == null ? void 0 : _a2.component;
+};
+const tagName2 = function tagName3(props, state) {
+  return getBlockTag(useBlock2(props));
+};
+const useBlock2 = function useBlock3(props, state) {
+  return repeatItemData(props) ? props.block : getProcessedBlock({
+    block: props.block,
+    state: props.context.state,
+    context: props.context.context,
+    shouldEvaluateBindings: true
+  });
+};
+const attributes = function attributes2(props, state) {
+  return {
+    ...getBlockProperties(useBlock2(props)),
+    ...getBlockActions({
+      block: useBlock2(props),
+      state: props.context.state,
+      context: props.context.context
+    }),
+    style: getBlockStyles(useBlock2(props))
+  };
+};
+const shouldWrap = function shouldWrap2(props, state) {
+  var _a2;
+  return !((_a2 = componentInfo$b(props)) == null ? void 0 : _a2.noWrap);
+};
+const componentOptions = function componentOptions2(props, state) {
+  return {
+    ...getBlockComponentOptions(useBlock2(props)),
+    ...shouldWrap(props) ? {} : {
+      attributes: attributes(props)
+    }
+  };
+};
+const renderComponentProps = function renderComponentProps2(props, state) {
+  return {
+    blockChildren: children(props),
+    componentRef: componentRef(props),
+    componentOptions: componentOptions(props),
+    context: props.context
+  };
+};
+const children = function children2(props, state) {
+  var _a2;
+  return (_a2 = useBlock2(props).children) != null ? _a2 : [];
+};
+const childrenWithoutParentComponent = function childrenWithoutParentComponent2(props, state) {
+  const shouldRenderChildrenOutsideRef = !componentRef(props) && !repeatItemData(props);
+  return shouldRenderChildrenOutsideRef ? children(props) : [];
+};
+const repeatItemData = function repeatItemData2(props, state) {
+  const { repeat, ...blockWithoutRepeat } = props.block;
+  if (!(repeat == null ? void 0 : repeat.collection))
+    return void 0;
+  const itemsArray = evaluate({
+    code: repeat.collection,
+    state: props.context.state,
+    context: props.context.context
+  });
+  if (!Array.isArray(itemsArray))
+    return void 0;
+  const collectionName = repeat.collection.split(".").pop();
+  const itemNameToUse = repeat.itemName || (collectionName ? collectionName + "Item" : "item");
+  const repeatArray = itemsArray.map((item, index2) => ({
+    context: {
+      ...props.context,
+      state: {
+        ...props.context.state,
+        $index: index2,
+        $item: item,
+        [itemNameToUse]: item,
+        [`$${itemNameToUse}Index`]: index2
+      }
+    },
+    block: blockWithoutRepeat
+  }));
+  return repeatArray;
+};
+const RenderBlock = (props) => {
+  const state = {
+    tagName: ""
+  };
+  state.tagName = tagName2(props);
+  return /* @__PURE__ */ jsx(Fragment$1, {
+    children: shouldWrap(props) ? /* @__PURE__ */ jsx(Fragment$1, {
+      children: [
+        isEmptyHtmlElement(tagName2(props)) ? /* @__PURE__ */ jsx(state.tagName, {
+          ...attributes(props)
+        }) : null,
+        !isEmptyHtmlElement(tagName2(props)) && TARGET === "vue2" && repeatItemData(props) ? /* @__PURE__ */ jsx("div", {
+          class: "vue2-root-element-workaround",
+          children: (repeatItemData(props) || []).map(function(data, index2) {
+            return /* @__PURE__ */ jsx(RenderRepeatedBlock$1, {
+              repeatContext: data.context,
+              block: data.block
+            }, index2);
+          })
+        }) : null,
+        !isEmptyHtmlElement(tagName2(props)) && TARGET !== "vue2" && repeatItemData(props) ? (repeatItemData(props) || []).map(function(data, index2) {
+          return /* @__PURE__ */ jsx(RenderRepeatedBlock$1, {
+            repeatContext: data.context,
+            block: data.block
+          }, index2);
+        }) : null,
+        !isEmptyHtmlElement(tagName2(props)) && !repeatItemData(props) ? /* @__PURE__ */ jsx(state.tagName, {
+          ...attributes(props),
+          children: [
+            /* @__PURE__ */ jsx(RenderComponent$1, {
+              ...renderComponentProps(props)
+            }),
+            (childrenWithoutParentComponent(props) || []).map(function(child) {
+              return /* @__PURE__ */ jsx(RenderBlock, {
+                block: child,
+                context: props.context
+              }, "render-block-" + child.id);
+            }),
+            (childrenWithoutParentComponent(props) || []).map(function(child) {
+              return /* @__PURE__ */ jsx(BlockStyles$1, {
+                block: child,
+                context: props.context
+              }, "block-style-" + child.id);
+            })
+          ]
+        }) : null
+      ]
+    }) : /* @__PURE__ */ jsx(RenderComponent$1, {
+      ...renderComponentProps(props),
+      context: props.context
+    })
+  });
+};
+const RenderBlock$1 = RenderBlock;
+const className = function className2(props, state, builderContext) {
+  var _a2;
+  return "builder-blocks" + (!((_a2 = props.blocks) == null ? void 0 : _a2.length) ? " no-blocks" : "");
+};
+const onClick$1 = function onClick(props, state, builderContext) {
+  var _a2, _b;
+  if (isEditing() && !((_a2 = props.blocks) == null ? void 0 : _a2.length))
+    (_b = window.parent) == null ? void 0 : _b.postMessage({
+      type: "builder.clickEmptyBlocks",
+      data: {
+        parentElementId: props.parent,
+        dataPath: props.path
+      }
+    }, "*");
+};
+const onMouseEnter = function onMouseEnter2(props, state, builderContext) {
+  var _a2, _b;
+  if (isEditing() && !((_a2 = props.blocks) == null ? void 0 : _a2.length))
+    (_b = window.parent) == null ? void 0 : _b.postMessage({
+      type: "builder.hoverEmptyBlocks",
+      data: {
+        parentElementId: props.parent,
+        dataPath: props.path
+      }
+    }, "*");
+};
+const RenderBlocks = /* @__PURE__ */ componentQrl(inlinedQrl((props) => {
+  useStylesScopedQrl(inlinedQrl(STYLES$3, "RenderBlocks_component_useStylesScoped_0XKYzaR059E"));
+  const builderContext = useContext(BuilderContext);
+  const state = {
+    tagName: ""
+  };
+  return /* @__PURE__ */ jsx("div", {
+    class: className(props) + " div-RenderBlocks",
+    "builder-path": props.path,
+    "builder-parent-id": props.parent,
+    style: props.style,
+    onClick$: inlinedQrl((event) => {
+      const [builderContext2, props2, state2] = useLexicalScope();
+      return onClick$1(props2);
+    }, "RenderBlocks_component_div_onClick_RzhhZa265Yg", [
+      builderContext,
+      props,
+      state
+    ]),
+    onMouseEnter$: inlinedQrl((event) => {
+      const [builderContext2, props2, state2] = useLexicalScope();
+      return onMouseEnter(props2);
+    }, "RenderBlocks_component_div_onMouseEnter_nG7I7RYG3JQ", [
+      builderContext,
+      props,
+      state
+    ]),
+    children: [
+      props.blocks ? (props.blocks || []).map(function(block) {
+        return /* @__PURE__ */ jsx(RenderBlock$1, {
+          block,
+          context: builderContext
+        }, "render-block-" + block.id);
+      }) : null,
+      props.blocks ? (props.blocks || []).map(function(block) {
+        return /* @__PURE__ */ jsx(BlockStyles$1, {
+          block,
+          context: builderContext
+        }, "block-style-" + block.id);
+      }) : null
+    ]
+  });
+}, "RenderBlocks_component_MYUZ0j1uLsw"));
+const RenderBlocks$1 = RenderBlocks;
+const STYLES$3 = `.div-RenderBlocks { 
+display: flex;
+flex-direction: column;
+align-items: stretch; }`;
+const getGutterSize = function getGutterSize2(props, state) {
+  return typeof props.space === "number" ? props.space || 0 : 20;
+};
+const getColumns = function getColumns2(props, state) {
+  return props.columns || [];
+};
+const getWidth = function getWidth2(props, state, index2) {
+  var _a2;
+  const columns = getColumns(props);
+  return ((_a2 = columns[index2]) == null ? void 0 : _a2.width) || 100 / columns.length;
+};
+const getColumnCssWidth = function getColumnCssWidth2(props, state, index2) {
+  const columns = getColumns(props);
+  const gutterSize = getGutterSize(props);
+  const subtractWidth = gutterSize * (columns.length - 1) / columns.length;
+  return `calc(${getWidth(props, state, index2)}% - ${subtractWidth}px)`;
+};
+const maybeApplyForTablet = function maybeApplyForTablet2(props, state, prop) {
+  const _stackColumnsAt = props.stackColumnsAt || "tablet";
+  return _stackColumnsAt === "tablet" ? prop : "inherit";
+};
+const columnsCssVars = function columnsCssVars2(props, state) {
+  const flexDir = props.stackColumnsAt === "never" ? "inherit" : props.reverseColumnsWhenStacked ? "column-reverse" : "column";
+  return {
+    "--flex-dir": flexDir,
+    "--flex-dir-tablet": maybeApplyForTablet(props, state, flexDir)
+  };
+};
+const columnCssVars = function columnCssVars2(props, state) {
+  const width = "100%";
+  const marginLeft = "0";
+  return {
+    "--column-width": width,
+    "--column-margin-left": marginLeft,
+    "--column-width-tablet": maybeApplyForTablet(props, state, width),
+    "--column-margin-left-tablet": maybeApplyForTablet(props, state, marginLeft)
+  };
+};
+const Columns = /* @__PURE__ */ componentQrl(inlinedQrl((props) => {
+  useStylesScopedQrl(inlinedQrl(STYLES$2, "Columns_component_useStylesScoped_s7JLZz7MCCQ"));
+  const state = {
+    tagName: ""
+  };
+  return /* @__PURE__ */ jsx("div", {
+    class: "builder-columns div-Columns",
+    style: columnsCssVars(props, state),
+    children: (props.columns || []).map(function(column, index2) {
+      return /* @__PURE__ */ jsx("div", {
+        class: "builder-column div-Columns-2",
+        style: {
+          width: getColumnCssWidth(props, state, index2),
+          marginLeft: `${index2 === 0 ? 0 : getGutterSize(props)}px`,
+          ...columnCssVars(props, state)
+        },
+        children: /* @__PURE__ */ jsx(RenderBlocks$1, {
+          blocks: markMutable(column.blocks),
+          path: `component.options.columns.${index2}.blocks`,
+          parent: props.builderBlock.id,
+          style: {
+            flexGrow: "1"
+          }
+        })
+      }, index2);
+    })
+  });
+}, "Columns_component_7yLj4bxdI6c"));
+const Columns$1 = Columns;
+const STYLES$2 = `.div-Columns { 
+display: flex;
+align-items: stretch;
+line-height: normal; }@media (max-width: 991px) { .div-Columns { 
+flex-direction: var(--flex-dir-tablet); } }@media (max-width: 639px) { .div-Columns { 
+flex-direction: var(--flex-dir); } }.div-Columns-2 { 
+display: flex;
+flex-direction: column;
+align-items: stretch; }@media (max-width: 991px) { .div-Columns-2 { 
+width: var(--column-width-tablet) !important;
+margin-left: var(--column-margin-left-tablet) !important; } }@media (max-width: 639px) { .div-Columns-2 { 
+width: var(--column-width) !important;
+margin-left: var(--column-margin-left) !important; } }`;
+function removeProtocol(path) {
+  return path.replace(/http(s)?:/, "");
+}
+function updateQueryParam(uri = "", key, value) {
+  const re = new RegExp("([?&])" + key + "=.*?(&|$)", "i");
+  const separator = uri.indexOf("?") !== -1 ? "&" : "?";
+  if (uri.match(re))
+    return uri.replace(re, "$1" + key + "=" + encodeURIComponent(value) + "$2");
+  return uri + separator + key + "=" + encodeURIComponent(value);
+}
+function getShopifyImageUrl(src, size) {
+  if (!src || !(src == null ? void 0 : src.match(/cdn\.shopify\.com/)) || !size)
+    return src;
+  if (size === "master")
+    return removeProtocol(src);
+  const match = src.match(/(_\d+x(\d+)?)?(\.(jpg|jpeg|gif|png|bmp|bitmap|tiff|tif)(\?v=\d+)?)/i);
+  if (match) {
+    const prefix = src.split(match[0]);
+    const suffix = match[3];
+    const useSize = size.match("x") ? size : `${size}x`;
+    return removeProtocol(`${prefix[0]}_${useSize}${suffix}`);
+  }
+  return null;
+}
+function getSrcSet(url) {
+  if (!url)
+    return url;
+  const sizes = [
+    100,
+    200,
+    400,
+    800,
+    1200,
+    1600,
+    2e3
+  ];
+  if (url.match(/builder\.io/)) {
+    let srcUrl = url;
+    const widthInSrc = Number(url.split("?width=")[1]);
+    if (!isNaN(widthInSrc))
+      srcUrl = `${srcUrl} ${widthInSrc}w`;
+    return sizes.filter((size) => size !== widthInSrc).map((size) => `${updateQueryParam(url, "width", size)} ${size}w`).concat([
+      srcUrl
+    ]).join(", ");
+  }
+  if (url.match(/cdn\.shopify\.com/))
+    return sizes.map((size) => [
+      getShopifyImageUrl(url, `${size}x${size}`),
+      size
+    ]).filter(([sizeUrl]) => !!sizeUrl).map(([sizeUrl, size]) => `${sizeUrl} ${size}w`).concat([
+      url
+    ]).join(", ");
+  return url;
+}
+const srcSetToUse = function srcSetToUse2(props, state) {
+  var _a2;
+  const imageToUse = props.image || props.src;
+  const url = imageToUse;
+  if (!url || !(url.match(/builder\.io/) || url.match(/cdn\.shopify\.com/)))
+    return props.srcset;
+  if (props.srcset && ((_a2 = props.image) == null ? void 0 : _a2.includes("builder.io/api/v1/image"))) {
+    if (!props.srcset.includes(props.image.split("?")[0])) {
+      console.debug("Removed given srcset");
+      return getSrcSet(url);
+    }
+  } else if (props.image && !props.srcset)
+    return getSrcSet(url);
+  return getSrcSet(url);
+};
+const webpSrcSet = function webpSrcSet2(props, state) {
+  var _a2;
+  if (((_a2 = srcSetToUse(props)) == null ? void 0 : _a2.match(/builder\.io/)) && !props.noWebp)
+    return srcSetToUse(props).replace(/\?/g, "?format=webp&");
+  else
+    return "";
+};
+const Image = /* @__PURE__ */ componentQrl(inlinedQrl((props) => {
+  var _a2, _b, _c, _d;
+  useStylesScopedQrl(inlinedQrl(STYLES$1, "Image_component_useStylesScoped_fBMYiVf9fuU"));
+  return /* @__PURE__ */ jsx("div", {
+    class: "div-Image",
+    children: [
+      /* @__PURE__ */ jsx("picture", {
+        children: [
+          webpSrcSet(props) ? /* @__PURE__ */ jsx("source", {
+            type: "image/webp",
+            srcSet: webpSrcSet(props)
+          }) : null,
+          /* @__PURE__ */ jsx("img", {
+            loading: "lazy",
+            alt: props.altText,
+            role: props.altText ? "presentation" : void 0,
+            style: {
+              objectPosition: props.backgroundSize || "center",
+              objectFit: props.backgroundSize || "cover"
+            },
+            class: "builder-image" + (props.className ? " " + props.className : "") + " img-Image",
+            src: props.image,
+            srcSet: srcSetToUse(props),
+            sizes: props.sizes
+          }),
+          /* @__PURE__ */ jsx("source", {
+            srcSet: srcSetToUse(props)
+          })
+        ]
+      }),
+      props.aspectRatio && !(props.fitContent && ((_b = (_a2 = props.builderBlock) == null ? void 0 : _a2.children) == null ? void 0 : _b.length)) ? /* @__PURE__ */ jsx("div", {
+        class: "builder-image-sizer div-Image-2",
+        style: {
+          paddingTop: props.aspectRatio * 100 + "%"
+        }
+      }) : null,
+      ((_d = (_c = props.builderBlock) == null ? void 0 : _c.children) == null ? void 0 : _d.length) && props.fitContent ? /* @__PURE__ */ jsx(Slot, {}) : null,
+      !props.fitContent ? /* @__PURE__ */ jsx("div", {
+        class: "div-Image-3",
+        children: /* @__PURE__ */ jsx(Slot, {})
+      }) : null
+    ]
+  });
+}, "Image_component_LRxDkFa1EfU"));
+const Image$1 = Image;
+const STYLES$1 = `.div-Image { 
+position: relative; }.img-Image { 
+opacity: 1;
+transition: opacity 0.2s ease-in-out;
+position: absolute;
+height: 100%;
+width: 100%;
+top: 0px;
+left: 0px; }.div-Image-2 { 
+width: 100%;
+pointer-events: none;
+font-size: 0; }.div-Image-3 { 
+display: flex;
+flex-direction: column;
+align-items: stretch;
+position: absolute;
+top: 0;
+left: 0;
+width: 100%;
+height: 100%; }`;
+const Text = /* @__PURE__ */ componentQrl(inlinedQrl((props) => {
+  return /* @__PURE__ */ jsx("span", {
+    class: "builder-text",
+    dangerouslySetInnerHTML: props.text
+  });
+}, "Text_component_15p0cKUxgIE"));
+const Text$1 = Text;
+const videoProps = function videoProps2(props, state) {
+  return {
+    ...props.autoPlay === true ? {
+      autoPlay: true
+    } : {},
+    ...props.muted === true ? {
+      muted: true
+    } : {},
+    ...props.controls === true ? {
+      controls: true
+    } : {},
+    ...props.loop === true ? {
+      loop: true
+    } : {},
+    ...props.playsInline === true ? {
+      playsInline: true
+    } : {}
+  };
+};
+const Video = /* @__PURE__ */ componentQrl(inlinedQrl((props) => {
+  var _a2;
+  return /* @__PURE__ */ jsx("video", {
+    ...videoProps(props),
+    style: {
+      width: "100%",
+      height: "100%",
+      ...(_a2 = props.attributes) == null ? void 0 : _a2.style,
+      objectFit: props.fit,
+      objectPosition: props.position,
+      borderRadius: 1
+    },
+    src: props.video || "no-src",
+    poster: props.posterImage
+  });
+}, "Video_component_qdcTZflYyoQ"));
+const Video$1 = Video;
+const Button = /* @__PURE__ */ componentQrl(inlinedQrl((props) => {
+  useStylesScopedQrl(inlinedQrl(STYLES, "Button_component_useStylesScoped_a1JZ0Q0Q2Oc"));
+  return /* @__PURE__ */ jsx(Fragment$1, {
+    children: props.link ? /* @__PURE__ */ jsx("a", {
+      role: "button",
+      ...props.attributes,
+      href: props.link,
+      target: props.openLinkInNewTab ? "_blank" : void 0,
+      children: props.text
+    }) : /* @__PURE__ */ jsx("button", {
+      class: "button-Button",
+      ...props.attributes,
+      children: props.text
+    })
+  });
+}, "Button_component_gJoMUICXoUQ"));
+const Button$1 = Button;
+const STYLES = `.button-Button { 
+all: unset; }`;
+const componentInfo$a = {
+  name: "Core:Button",
+  builtIn: true,
+  image: "https://cdn.builder.io/api/v1/image/assets%2FIsxPKMo2gPRRKeakUztj1D6uqed2%2F81a15681c3e74df09677dfc57a615b13",
+  defaultStyles: {
+    appearance: "none",
+    paddingTop: "15px",
+    paddingBottom: "15px",
+    paddingLeft: "25px",
+    paddingRight: "25px",
+    backgroundColor: "#000000",
+    color: "white",
+    borderRadius: "4px",
+    textAlign: "center",
+    cursor: "pointer"
+  },
+  inputs: [
+    {
+      name: "text",
+      type: "text",
+      defaultValue: "Click me!",
+      bubble: true
+    },
+    {
+      name: "link",
+      type: "url",
+      bubble: true
+    },
+    {
+      name: "openLinkInNewTab",
+      type: "boolean",
+      defaultValue: false,
+      friendlyName: "Open link in new tab"
+    }
+  ],
+  static: true,
+  noWrap: true
+};
+function markSerializable(fn) {
+  fn.__qwik_serializable__ = true;
+  return fn;
+}
+const componentInfo$9 = {
+  name: "Columns",
+  builtIn: true,
+  inputs: [
+    {
+      name: "columns",
+      type: "array",
+      broadcast: true,
+      subFields: [
+        {
+          name: "blocks",
+          type: "array",
+          hideFromUI: true,
+          defaultValue: [
+            {
+              "@type": "@builder.io/sdk:Element",
+              responsiveStyles: {
+                large: {
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "stretch",
+                  flexShrink: "0",
+                  position: "relative",
+                  marginTop: "30px",
+                  textAlign: "center",
+                  lineHeight: "normal",
+                  height: "auto",
+                  minHeight: "20px",
+                  minWidth: "20px",
+                  overflow: "hidden"
+                }
+              },
+              component: {
+                name: "Image",
+                options: {
+                  image: "https://builder.io/api/v1/image/assets%2Fpwgjf0RoYWbdnJSbpBAjXNRMe9F2%2Ffb27a7c790324294af8be1c35fe30f4d",
+                  backgroundPosition: "center",
+                  backgroundSize: "cover",
+                  aspectRatio: 0.7004048582995948
+                }
+              }
+            },
+            {
+              "@type": "@builder.io/sdk:Element",
+              responsiveStyles: {
+                large: {
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "stretch",
+                  flexShrink: "0",
+                  position: "relative",
+                  marginTop: "30px",
+                  textAlign: "center",
+                  lineHeight: "normal",
+                  height: "auto"
+                }
+              },
+              component: {
+                name: "Text",
+                options: {
+                  text: "<p>Enter some text...</p>"
+                }
+              }
+            }
+          ]
+        },
+        {
+          name: "width",
+          type: "number",
+          hideFromUI: true,
+          helperText: "Width %, e.g. set to 50 to fill half of the space"
+        },
+        {
+          name: "link",
+          type: "url",
+          helperText: "Optionally set a url that clicking this column will link to"
+        }
+      ],
+      defaultValue: [
+        {
+          blocks: [
+            {
+              "@type": "@builder.io/sdk:Element",
+              responsiveStyles: {
+                large: {
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "stretch",
+                  flexShrink: "0",
+                  position: "relative",
+                  marginTop: "30px",
+                  textAlign: "center",
+                  lineHeight: "normal",
+                  height: "auto",
+                  minHeight: "20px",
+                  minWidth: "20px",
+                  overflow: "hidden"
+                }
+              },
+              component: {
+                name: "Image",
+                options: {
+                  image: "https://builder.io/api/v1/image/assets%2Fpwgjf0RoYWbdnJSbpBAjXNRMe9F2%2Ffb27a7c790324294af8be1c35fe30f4d",
+                  backgroundPosition: "center",
+                  backgroundSize: "cover",
+                  aspectRatio: 0.7004048582995948
+                }
+              }
+            },
+            {
+              "@type": "@builder.io/sdk:Element",
+              responsiveStyles: {
+                large: {
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "stretch",
+                  flexShrink: "0",
+                  position: "relative",
+                  marginTop: "30px",
+                  textAlign: "center",
+                  lineHeight: "normal",
+                  height: "auto"
+                }
+              },
+              component: {
+                name: "Text",
+                options: {
+                  text: "<p>Enter some text...</p>"
+                }
+              }
+            }
+          ]
+        },
+        {
+          blocks: [
+            {
+              "@type": "@builder.io/sdk:Element",
+              responsiveStyles: {
+                large: {
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "stretch",
+                  flexShrink: "0",
+                  position: "relative",
+                  marginTop: "30px",
+                  textAlign: "center",
+                  lineHeight: "normal",
+                  height: "auto",
+                  minHeight: "20px",
+                  minWidth: "20px",
+                  overflow: "hidden"
+                }
+              },
+              component: {
+                name: "Image",
+                options: {
+                  image: "https://builder.io/api/v1/image/assets%2Fpwgjf0RoYWbdnJSbpBAjXNRMe9F2%2Ffb27a7c790324294af8be1c35fe30f4d",
+                  backgroundPosition: "center",
+                  backgroundSize: "cover",
+                  aspectRatio: 0.7004048582995948
+                }
+              }
+            },
+            {
+              "@type": "@builder.io/sdk:Element",
+              responsiveStyles: {
+                large: {
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "stretch",
+                  flexShrink: "0",
+                  position: "relative",
+                  marginTop: "30px",
+                  textAlign: "center",
+                  lineHeight: "normal",
+                  height: "auto"
+                }
+              },
+              component: {
+                name: "Text",
+                options: {
+                  text: "<p>Enter some text...</p>"
+                }
+              }
+            }
+          ]
+        }
+      ],
+      onChange: markSerializable((options) => {
+        function clearWidths() {
+          columns.forEach((col) => {
+            col.delete("width");
+          });
+        }
+        const columns = options.get("columns");
+        if (Array.isArray(columns)) {
+          const containsColumnWithWidth = !!columns.find((col) => col.get("width"));
+          if (containsColumnWithWidth) {
+            const containsColumnWithoutWidth = !!columns.find((col) => !col.get("width"));
+            if (containsColumnWithoutWidth)
+              clearWidths();
+            else {
+              const sumWidths = columns.reduce((memo, col) => {
+                return memo + col.get("width");
+              }, 0);
+              const widthsDontAddUp = sumWidths !== 100;
+              if (widthsDontAddUp)
+                clearWidths();
+            }
+          }
+        }
+      })
+    },
+    {
+      name: "space",
+      type: "number",
+      defaultValue: 20,
+      helperText: "Size of gap between columns",
+      advanced: true
+    },
+    {
+      name: "stackColumnsAt",
+      type: "string",
+      defaultValue: "tablet",
+      helperText: "Convert horizontal columns to vertical at what device size",
+      enum: [
+        "tablet",
+        "mobile",
+        "never"
+      ],
+      advanced: true
+    },
+    {
+      name: "reverseColumnsWhenStacked",
+      type: "boolean",
+      defaultValue: false,
+      helperText: "When stacking columns for mobile devices, reverse the ordering",
+      advanced: true
+    }
+  ]
+};
+const componentInfo$8 = {
+  name: "Fragment",
+  static: true,
+  hidden: true,
+  builtIn: true,
+  canHaveChildren: true,
+  noWrap: true
+};
+const FragmentComponent = /* @__PURE__ */ componentQrl(inlinedQrl((props) => {
+  return /* @__PURE__ */ jsx("span", {
+    children: /* @__PURE__ */ jsx(Slot, {})
+  });
+}, "FragmentComponent_component_T0AypnadAK0"));
+const Fragment = FragmentComponent;
+const componentInfo$7 = {
+  name: "Image",
+  static: true,
+  builtIn: true,
+  image: "https://firebasestorage.googleapis.com/v0/b/builder-3b0a2.appspot.com/o/images%2Fbaseline-insert_photo-24px.svg?alt=media&token=4e5d0ef4-f5e8-4e57-b3a9-38d63a9b9dc4",
+  defaultStyles: {
+    position: "relative",
+    minHeight: "20px",
+    minWidth: "20px",
+    overflow: "hidden"
+  },
+  canHaveChildren: true,
+  inputs: [
+    {
+      name: "image",
+      type: "file",
+      bubble: true,
+      allowedFileTypes: [
+        "jpeg",
+        "jpg",
+        "png",
+        "svg"
+      ],
+      required: true,
+      defaultValue: "https://cdn.builder.io/api/v1/image/assets%2Fpwgjf0RoYWbdnJSbpBAjXNRMe9F2%2Ffb27a7c790324294af8be1c35fe30f4d",
+      onChange: markSerializable((options) => {
+        const DEFAULT_ASPECT_RATIO = 0.7041;
+        options.delete("srcset");
+        options.delete("noWebp");
+        function loadImage(url, timeout = 6e4) {
+          return new Promise((resolve, reject) => {
+            const img = document.createElement("img");
+            let loaded = false;
+            img.onload = () => {
+              loaded = true;
+              resolve(img);
+            };
+            img.addEventListener("error", (event) => {
+              console.warn("Image load failed", event.error);
+              reject(event.error);
+            });
+            img.src = url;
+            setTimeout(() => {
+              if (!loaded)
+                reject(new Error("Image load timed out"));
+            }, timeout);
+          });
+        }
+        function round(num) {
+          return Math.round(num * 1e3) / 1e3;
+        }
+        const value = options.get("image");
+        const aspectRatio = options.get("aspectRatio");
+        fetch(value).then((res) => res.blob()).then((blob) => {
+          if (blob.type.includes("svg"))
+            options.set("noWebp", true);
+        });
+        if (value && (!aspectRatio || aspectRatio === DEFAULT_ASPECT_RATIO))
+          return loadImage(value).then((img) => {
+            const possiblyUpdatedAspectRatio = options.get("aspectRatio");
+            if (options.get("image") === value && (!possiblyUpdatedAspectRatio || possiblyUpdatedAspectRatio === DEFAULT_ASPECT_RATIO)) {
+              if (img.width && img.height) {
+                options.set("aspectRatio", round(img.height / img.width));
+                options.set("height", img.height);
+                options.set("width", img.width);
+              }
+            }
+          });
+      })
+    },
+    {
+      name: "backgroundSize",
+      type: "text",
+      defaultValue: "cover",
+      enum: [
+        {
+          label: "contain",
+          value: "contain",
+          helperText: "The image should never get cropped"
+        },
+        {
+          label: "cover",
+          value: "cover",
+          helperText: "The image should fill it's box, cropping when needed"
+        }
+      ]
+    },
+    {
+      name: "backgroundPosition",
+      type: "text",
+      defaultValue: "center",
+      enum: [
+        "center",
+        "top",
+        "left",
+        "right",
+        "bottom",
+        "top left",
+        "top right",
+        "bottom left",
+        "bottom right"
+      ]
+    },
+    {
+      name: "altText",
+      type: "string",
+      helperText: "Text to display when the user has images off"
+    },
+    {
+      name: "height",
+      type: "number",
+      hideFromUI: true
+    },
+    {
+      name: "width",
+      type: "number",
+      hideFromUI: true
+    },
+    {
+      name: "sizes",
+      type: "string",
+      hideFromUI: true
+    },
+    {
+      name: "srcset",
+      type: "string",
+      hideFromUI: true
+    },
+    {
+      name: "lazy",
+      type: "boolean",
+      defaultValue: true,
+      hideFromUI: true
+    },
+    {
+      name: "fitContent",
+      type: "boolean",
+      helperText: "When child blocks are provided, fit to them instead of using the image's aspect ratio",
+      defaultValue: true
+    },
+    {
+      name: "aspectRatio",
+      type: "number",
+      helperText: "This is the ratio of height/width, e.g. set to 1.5 for a 300px wide and 200px tall photo. Set to 0 to not force the image to maintain it's aspect ratio",
+      advanced: true,
+      defaultValue: 0.7041
+    }
+  ]
+};
+const componentInfo$6 = {
+  name: "Core:Section",
+  static: true,
+  builtIn: true,
+  image: "https://cdn.builder.io/api/v1/image/assets%2FIsxPKMo2gPRRKeakUztj1D6uqed2%2F682efef23ace49afac61748dd305c70a",
+  inputs: [
+    {
+      name: "maxWidth",
+      type: "number",
+      defaultValue: 1200
+    },
+    {
+      name: "lazyLoad",
+      type: "boolean",
+      defaultValue: false,
+      advanced: true,
+      description: "Only render this section when in view"
+    }
+  ],
+  defaultStyles: {
+    paddingLeft: "20px",
+    paddingRight: "20px",
+    paddingTop: "50px",
+    paddingBottom: "50px",
+    marginTop: "0px",
+    width: "100vw",
+    marginLeft: "calc(50% - 50vw)"
+  },
+  canHaveChildren: true,
+  defaultChildren: [
+    {
+      "@type": "@builder.io/sdk:Element",
+      responsiveStyles: {
+        large: {
+          textAlign: "center"
+        }
+      },
+      component: {
+        name: "Text",
+        options: {
+          text: "<p><b>I am a section! My content keeps from getting too wide, so that it's easy to read even on big screens.</b></p><p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur</p>"
+        }
+      }
+    }
+  ]
+};
+const SectionComponent = /* @__PURE__ */ componentQrl(inlinedQrl((props) => {
+  return /* @__PURE__ */ jsx("section", {
+    ...props.attributes,
+    style: (() => {
+      props.maxWidth && typeof props.maxWidth === "number" ? props.maxWidth : void 0;
+    })(),
+    children: /* @__PURE__ */ jsx(Slot, {})
+  });
+}, "SectionComponent_component_ZWF9iD5WeLg"));
+const Section = SectionComponent;
+const componentInfo$5 = {
+  name: "Symbol",
+  noWrap: true,
+  static: true,
+  builtIn: true,
+  inputs: [
+    {
+      name: "symbol",
+      type: "uiSymbol"
+    },
+    {
+      name: "dataOnly",
+      helperText: "Make this a data symbol that doesn't display any UI",
+      type: "boolean",
+      defaultValue: false,
+      advanced: true,
+      hideFromUI: true
+    },
+    {
+      name: "inheritState",
+      helperText: "Inherit the parent component state and data",
+      type: "boolean",
+      defaultValue: false,
+      advanced: true
+    },
+    {
+      name: "renderToLiquid",
+      helperText: "Render this symbols contents to liquid. Turn off to fetch with javascript and use custom targeting",
+      type: "boolean",
+      defaultValue: false,
+      advanced: true,
+      hideFromUI: true
+    },
+    {
+      name: "useChildren",
+      hideFromUI: true,
+      type: "boolean"
+    }
+  ]
+};
+const componentInfo$4 = {
+  name: "Text",
+  static: true,
+  builtIn: true,
+  image: "https://firebasestorage.googleapis.com/v0/b/builder-3b0a2.appspot.com/o/images%2Fbaseline-text_fields-24px%20(1).svg?alt=media&token=12177b73-0ee3-42ca-98c6-0dd003de1929",
+  inputs: [
+    {
+      name: "text",
+      type: "html",
+      required: true,
+      autoFocus: true,
+      bubble: true,
+      defaultValue: "Enter some text..."
+    }
+  ],
+  defaultStyles: {
+    lineHeight: "normal",
+    height: "auto",
+    textAlign: "center"
+  }
+};
+const componentInfo$3 = {
+  name: "Video",
+  canHaveChildren: true,
+  builtIn: true,
+  defaultStyles: {
+    minHeight: "20px",
+    minWidth: "20px"
+  },
+  image: "https://firebasestorage.googleapis.com/v0/b/builder-3b0a2.appspot.com/o/images%2Fbaseline-videocam-24px%20(1).svg?alt=media&token=49a84e4a-b20e-4977-a650-047f986874bb",
+  inputs: [
+    {
+      name: "video",
+      type: "file",
+      allowedFileTypes: [
+        "mp4"
+      ],
+      bubble: true,
+      defaultValue: "https://firebasestorage.googleapis.com/v0/b/builder-3b0a2.appspot.com/o/assets%2FKQlEmWDxA0coC3PK6UvkrjwkIGI2%2F28cb070609f546cdbe5efa20e931aa4b?alt=media&token=912e9551-7a7c-4dfb-86b6-3da1537d1a7f",
+      required: true
+    },
+    {
+      name: "posterImage",
+      type: "file",
+      allowedFileTypes: [
+        "jpeg",
+        "png"
+      ],
+      helperText: "Image to show before the video plays"
+    },
+    {
+      name: "autoPlay",
+      type: "boolean",
+      defaultValue: true
+    },
+    {
+      name: "controls",
+      type: "boolean",
+      defaultValue: false
+    },
+    {
+      name: "muted",
+      type: "boolean",
+      defaultValue: true
+    },
+    {
+      name: "loop",
+      type: "boolean",
+      defaultValue: true
+    },
+    {
+      name: "playsInline",
+      type: "boolean",
+      defaultValue: true
+    },
+    {
+      name: "fit",
+      type: "text",
+      defaultValue: "cover",
+      enum: [
+        "contain",
+        "cover",
+        "fill",
+        "auto"
+      ]
+    },
+    {
+      name: "fitContent",
+      type: "boolean",
+      helperText: "When child blocks are provided, fit to them instead of using the aspect ratio",
+      defaultValue: true,
+      advanced: true
+    },
+    {
+      name: "position",
+      type: "text",
+      defaultValue: "center",
+      enum: [
+        "center",
+        "top",
+        "left",
+        "right",
+        "bottom",
+        "top left",
+        "top right",
+        "bottom left",
+        "bottom right"
+      ]
+    },
+    {
+      name: "height",
+      type: "number",
+      advanced: true
+    },
+    {
+      name: "width",
+      type: "number",
+      advanced: true
+    },
+    {
+      name: "aspectRatio",
+      type: "number",
+      advanced: true,
+      defaultValue: 0.7004048582995948
+    },
+    {
+      name: "lazyLoad",
+      type: "boolean",
+      helperText: 'Load this video "lazily" - as in only when a user scrolls near the video. Recommended for optmized performance and bandwidth consumption',
+      defaultValue: true,
+      advanced: true
+    }
+  ]
+};
+const componentInfo$2 = {
+  name: "Embed",
+  static: true,
+  builtIn: true,
+  inputs: [
+    {
+      name: "url",
+      type: "url",
+      required: true,
+      defaultValue: "",
+      helperText: "e.g. enter a youtube url, google map, etc",
+      onChange: markSerializable((options) => {
+        const url = options.get("url");
+        if (url) {
+          options.set("content", "Loading...");
+          const apiKey = "ae0e60e78201a3f2b0de4b";
+          return fetch(`https://iframe.ly/api/iframely?url=${url}&api_key=${apiKey}`).then((res) => res.json()).then((data) => {
+            if (options.get("url") === url) {
+              if (data.html)
+                options.set("content", data.html);
+              else
+                options.set("content", "Invalid url, please try another");
+            }
+          }).catch((_err) => {
+            options.set("content", "There was an error embedding this URL, please try again or another URL");
+          });
+        } else
+          options.delete("content");
+      })
+    },
+    {
+      name: "content",
+      type: "html",
+      defaultValue: '<div style="padding: 20px; text-align: center">(Choose an embed URL)<div>',
+      hideFromUI: true
+    }
+  ]
+};
+const SCRIPT_MIME_TYPES = [
+  "text/javascript",
+  "application/javascript",
+  "application/ecmascript"
+];
+const isJsScript = (script) => SCRIPT_MIME_TYPES.includes(script.type);
+const findAndRunScripts$1 = function findAndRunScripts(props, state, elem) {
+  if (!elem || !elem.getElementsByTagName)
+    return;
+  const scripts = elem.getElementsByTagName("script");
+  for (let i = 0; i < scripts.length; i++) {
+    const script = scripts[i];
+    if (script.src && !state.scriptsInserted.includes(script.src)) {
+      state.scriptsInserted.push(script.src);
+      const newScript = document.createElement("script");
+      newScript.async = true;
+      newScript.src = script.src;
+      document.head.appendChild(newScript);
+    } else if (isJsScript(script) && !state.scriptsRun.includes(script.innerText))
+      try {
+        state.scriptsRun.push(script.innerText);
+        new Function(script.innerText)();
+      } catch (error) {
+        console.warn("`Embed`: Error running script:", error);
+      }
+  }
+};
+const Embed = /* @__PURE__ */ componentQrl(inlinedQrl((props) => {
+  const elem = useRef();
+  const state = useStore({
+    ranInitFn: false,
+    scriptsInserted: [],
+    scriptsRun: []
+  });
+  useWatchQrl(inlinedQrl(({ track: track2 }) => {
+    const [elem2, props2, state2] = useLexicalScope();
+    state2 && track2(state2, "ranInitFn");
+    if (elem2 && !state2.ranInitFn) {
+      state2.ranInitFn = true;
+      findAndRunScripts$1(props2, state2, elem2);
+    }
+  }, "Embed_component_useWatch_AxgWjrHdlAI", [
+    elem,
+    props,
     state
   ]));
-  return /* @__PURE__ */ jsx(Fragment, {
-    children: [
-      /* @__PURE__ */ jsx("input", {
-        type: "range",
-        value: state.number,
-        max: 50,
-        onInput$: inlinedQrl((ev) => {
-          const [state2] = useLexicalScope();
-          state2.number = ev.target.valueAsNumber;
-        }, "s_dznIGAlrcag", [
-          state
-        ])
-      }),
-      /* @__PURE__ */ jsx("div", {
-        style: {
-          "--state": `${state.count * 0.1}`
-        },
-        class: {
-          host: true,
-          pride: loc.query["pride"] === "true"
-        },
-        children: Array.from({
-          length: state.number
-        }, (_, i) => /* @__PURE__ */ jsx("div", {
-          class: {
-            square: true,
-            odd: i % 2 === 0
-          },
-          style: {
-            "--index": `${i + 1}`
-          }
-        }, i)).reverse()
-      })
-    ]
+  return /* @__PURE__ */ jsx("div", {
+    class: "builder-embed",
+    ref: elem,
+    dangerouslySetInnerHTML: props.content
   });
-}, "s_OW4nu0I1yZ8"));
-const head = {
-  title: "Qwik Flower"
+}, "Embed_component_Uji08ORjXbE"));
+const embed = Embed;
+const ImgComponent = /* @__PURE__ */ componentQrl(inlinedQrl((props) => {
+  return /* @__PURE__ */ jsx("img", {
+    style: {
+      objectFit: props.backgroundSize || "cover",
+      objectPosition: props.backgroundPosition || "center"
+    },
+    alt: props.altText,
+    src: props.imgSrc || props.image,
+    ...props.attributes
+  }, isEditing() && props.imgSrc || "default-key");
+}, "ImgComponent_component_FXvIDBSffO8"));
+const Img = ImgComponent;
+const componentInfo$1 = {
+  name: "Raw:Img",
+  hideFromInsertMenu: true,
+  builtIn: true,
+  image: "https://firebasestorage.googleapis.com/v0/b/builder-3b0a2.appspot.com/o/images%2Fbaseline-insert_photo-24px.svg?alt=media&token=4e5d0ef4-f5e8-4e57-b3a9-38d63a9b9dc4",
+  inputs: [
+    {
+      name: "image",
+      bubble: true,
+      type: "file",
+      allowedFileTypes: [
+        "jpeg",
+        "jpg",
+        "png",
+        "svg"
+      ],
+      required: true
+    }
+  ],
+  noWrap: true,
+  static: true
 };
-const Flower = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+const findAndRunScripts2 = function findAndRunScripts3(props, state, elem) {
+  if (elem && elem.getElementsByTagName && typeof window !== "undefined") {
+    const scripts = elem.getElementsByTagName("script");
+    for (let i = 0; i < scripts.length; i++) {
+      const script = scripts[i];
+      if (script.src) {
+        if (state.scriptsInserted.includes(script.src))
+          continue;
+        state.scriptsInserted.push(script.src);
+        const newScript = document.createElement("script");
+        newScript.async = true;
+        newScript.src = script.src;
+        document.head.appendChild(newScript);
+      } else if (!script.type || [
+        "text/javascript",
+        "application/javascript",
+        "application/ecmascript"
+      ].includes(script.type)) {
+        if (state.scriptsRun.includes(script.innerText))
+          continue;
+        try {
+          state.scriptsRun.push(script.innerText);
+          new Function(script.innerText)();
+        } catch (error) {
+          console.warn("`CustomCode`: Error running script:", error);
+        }
+      }
+    }
+  }
+};
+const CustomCode = /* @__PURE__ */ componentQrl(inlinedQrl((props) => {
+  const elem = useRef();
+  const state = useStore({
+    scriptsInserted: [],
+    scriptsRun: []
+  });
+  useClientEffectQrl(inlinedQrl(() => {
+    const [elem2, props2, state2] = useLexicalScope();
+    findAndRunScripts2(props2, state2, elem2);
+  }, "CustomCode_component_useClientEffect_4w4c951ufB4", [
+    elem,
+    props,
+    state
+  ]));
+  return /* @__PURE__ */ jsx("div", {
+    ref: elem,
+    class: "builder-custom-code" + (props.replaceNodes ? " replace-nodes" : ""),
+    dangerouslySetInnerHTML: props.code
+  });
+}, "CustomCode_component_uYOSy7w7Zqw"));
+const customCode = CustomCode;
+const componentInfo2 = {
+  name: "Custom Code",
+  static: true,
+  builtIn: true,
+  requiredPermissions: [
+    "editCode"
+  ],
+  inputs: [
+    {
+      name: "code",
+      type: "html",
+      required: true,
+      defaultValue: "<p>Hello there, I am custom HTML code!</p>",
+      code: true
+    },
+    {
+      name: "replaceNodes",
+      type: "boolean",
+      helperText: "Preserve server rendered dom nodes",
+      advanced: true
+    },
+    {
+      name: "scriptsClientOnly",
+      type: "boolean",
+      defaultValue: false,
+      helperText: "Only print and run scripts on the client. Important when scripts influence DOM that could be replaced when client loads",
+      advanced: true
+    }
+  ]
+};
+const getDefaultRegisteredComponents = () => [
+  {
+    component: Columns$1,
+    ...componentInfo$9
+  },
+  {
+    component: Image$1,
+    ...componentInfo$7
+  },
+  {
+    component: Img,
+    ...componentInfo$1
+  },
+  {
+    component: Text$1,
+    ...componentInfo$4
+  },
+  {
+    component: Video$1,
+    ...componentInfo$3
+  },
+  {
+    component: Symbol$2,
+    ...componentInfo$5
+  },
+  {
+    component: Button$1,
+    ...componentInfo$a
+  },
+  {
+    component: Section,
+    ...componentInfo$6
+  },
+  {
+    component: Fragment,
+    ...componentInfo$8
+  },
+  {
+    component: embed,
+    ...componentInfo$2
+  },
+  {
+    component: customCode,
+    ...componentInfo2
+  }
+];
+function flatten(object, path = null, separator = ".") {
+  return Object.keys(object).reduce((acc, key) => {
+    const value = object[key];
+    const newPath = [
+      path,
+      key
+    ].filter(Boolean).join(separator);
+    const isObject2 = [
+      typeof value === "object",
+      value !== null,
+      !(Array.isArray(value) && value.length === 0)
+    ].every(Boolean);
+    return isObject2 ? {
+      ...acc,
+      ...flatten(value, newPath, separator)
+    } : {
+      ...acc,
+      [newPath]: value
+    };
+  }, {});
+}
+const BUILDER_SEARCHPARAMS_PREFIX = "builder.";
+const convertSearchParamsToQueryObject = (searchParams) => {
+  const options = {};
+  searchParams.forEach((value, key) => {
+    options[key] = value;
+  });
+  return options;
+};
+const getBuilderSearchParams = (_options) => {
+  if (!_options)
+    return {};
+  const options = normalizeSearchParams(_options);
+  const newOptions = {};
+  Object.keys(options).forEach((key) => {
+    if (key.startsWith(BUILDER_SEARCHPARAMS_PREFIX)) {
+      const trimmedKey = key.replace(BUILDER_SEARCHPARAMS_PREFIX, "");
+      newOptions[trimmedKey] = options[key];
+    }
+  });
+  return newOptions;
+};
+const getBuilderSearchParamsFromWindow = () => {
+  if (!isBrowser())
+    return {};
+  const searchParams = new URLSearchParams(window.location.search);
+  return getBuilderSearchParams(searchParams);
+};
+const normalizeSearchParams = (searchParams) => searchParams instanceof URLSearchParams ? convertSearchParamsToQueryObject(searchParams) : searchParams;
+function getGlobalThis() {
+  if (typeof globalThis !== "undefined")
+    return globalThis;
+  if (typeof window !== "undefined")
+    return window;
+  if (typeof global !== "undefined")
+    return global;
+  if (typeof self !== "undefined")
+    return self;
+  return null;
+}
+async function getFetch() {
+  const globalFetch = getGlobalThis().fetch;
+  if (typeof globalFetch === "undefined" && typeof global !== "undefined")
+    throw new Error("`fetch()` not found, ensure you have it as part of your polyfills.");
+  return globalFetch.default || globalFetch;
+}
+const getTopLevelDomain = (host) => {
+  const parts = host.split(".");
+  if (parts.length > 2)
+    return parts.slice(1).join(".");
+  return host;
+};
+const getCookie = async ({ name, canTrack }) => {
+  var _a2;
+  try {
+    if (!canTrack)
+      return void 0;
+    return (_a2 = document.cookie.split("; ").find((row) => row.startsWith(`${name}=`))) == null ? void 0 : _a2.split("=")[1];
+  } catch (err) {
+    console.debug("[COOKIE] GET error: ", err);
+  }
+};
+const stringifyCookie = (cookie) => cookie.map(([key, value]) => value ? `${key}=${value}` : key).join("; ");
+const SECURE_CONFIG = [
+  [
+    "secure",
+    ""
+  ],
+  [
+    "SameSite",
+    "None"
+  ]
+];
+const createCookieString = ({ name, value, expires }) => {
+  const secure = isBrowser() ? location.protocol === "https:" : true;
+  const secureObj = secure ? SECURE_CONFIG : [
+    []
+  ];
+  const expiresObj = expires ? [
+    [
+      "expires",
+      expires.toUTCString()
+    ]
+  ] : [
+    []
+  ];
+  const cookieValue = [
+    [
+      name,
+      value
+    ],
+    ...expiresObj,
+    [
+      "path",
+      "/"
+    ],
+    [
+      "domain",
+      getTopLevelDomain(window.location.hostname)
+    ],
+    ...secureObj
+  ];
+  const cookie = stringifyCookie(cookieValue);
+  return cookie;
+};
+const setCookie = async ({ name, value, expires, canTrack }) => {
+  try {
+    if (!canTrack)
+      return void 0;
+    const cookie = createCookieString({
+      name,
+      value,
+      expires
+    });
+    document.cookie = cookie;
+  } catch (err) {
+    console.warn("[COOKIE] SET error: ", err);
+  }
+};
+const BUILDER_STORE_PREFIX = "builderio.variations";
+const getContentTestKey = (id) => `${BUILDER_STORE_PREFIX}.${id}`;
+const getContentVariationCookie = ({ contentId, canTrack }) => getCookie({
+  name: getContentTestKey(contentId),
+  canTrack
+});
+const setContentVariationCookie = ({ contentId, canTrack, value }) => setCookie({
+  name: getContentTestKey(contentId),
+  value,
+  canTrack
+});
+const checkIsDefined = (maybeT) => maybeT !== null && maybeT !== void 0;
+const checkIsBuilderContentWithVariations = (item) => checkIsDefined(item.id) && checkIsDefined(item.variations) && Object.keys(item.variations).length > 0;
+const getRandomVariationId = ({ id, variations }) => {
+  var _a2;
+  let n = 0;
+  const random = Math.random();
+  for (const id1 in variations) {
+    const testRatio = (_a2 = variations[id1]) == null ? void 0 : _a2.testRatio;
+    n += testRatio;
+    if (random < n)
+      return id1;
+  }
+  return id;
+};
+const getTestFields = ({ item, testGroupId }) => {
+  const variationValue = item.variations[testGroupId];
+  if (testGroupId === item.id || !variationValue)
+    return {
+      testVariationId: item.id,
+      testVariationName: "Default"
+    };
+  else
+    return {
+      data: variationValue.data,
+      testVariationId: variationValue.id,
+      testVariationName: variationValue.name || (variationValue.id === item.id ? "Default" : "")
+    };
+};
+const getContentVariation = async ({ item, canTrack }) => {
+  const testGroupId = await getContentVariationCookie({
+    canTrack,
+    contentId: item.id
+  });
+  const testFields = testGroupId ? getTestFields({
+    item,
+    testGroupId
+  }) : void 0;
+  if (testFields)
+    return testFields;
+  else {
+    const randomVariationId = getRandomVariationId({
+      variations: item.variations,
+      id: item.id
+    });
+    setContentVariationCookie({
+      contentId: item.id,
+      value: randomVariationId,
+      canTrack
+    }).catch((err) => {
+      console.error("could not store A/B test variation: ", err);
+    });
+    return getTestFields({
+      item,
+      testGroupId: randomVariationId
+    });
+  }
+};
+const handleABTesting = async ({ item, canTrack }) => {
+  if (!checkIsBuilderContentWithVariations(item))
+    return;
+  const variationValue = await getContentVariation({
+    item,
+    canTrack
+  });
+  Object.assign(item, variationValue);
+};
+async function getContent(options) {
+  return (await getAllContent({
+    ...options,
+    limit: 1
+  })).results[0] || null;
+}
+const generateContentUrl = (options) => {
+  const { limit = 30, userAttributes, query, noTraverse = false, model, apiKey } = options;
+  const url = new URL(`https://cdn.builder.io/api/v2/content/${model}?apiKey=${apiKey}&limit=${limit}&noTraverse=${noTraverse}`);
+  const queryOptions = {
+    ...getBuilderSearchParamsFromWindow(),
+    ...normalizeSearchParams(options.options || {})
+  };
+  const flattened = flatten(queryOptions);
+  for (const key in flattened)
+    url.searchParams.set(key, String(flattened[key]));
+  if (userAttributes)
+    url.searchParams.set("userAttributes", JSON.stringify(userAttributes));
+  if (query) {
+    const flattened1 = flatten({
+      query
+    });
+    for (const key1 in flattened1)
+      url.searchParams.set(key1, JSON.stringify(flattened1[key1]));
+  }
+  return url;
+};
+async function getAllContent(options) {
+  const url = generateContentUrl(options);
+  const fetch2 = await getFetch();
+  const content = await fetch2(url.href).then((res) => res.json());
+  const canTrack = options.canTrack !== false;
+  if (canTrack)
+    for (const item of content.results)
+      await handleABTesting({
+        item,
+        canTrack
+      });
+  return content;
+}
+function isPreviewing() {
+  if (!isBrowser())
+    return false;
+  if (isEditing())
+    return false;
+  return Boolean(location.search.indexOf("builder.preview=") !== -1);
+}
+const components = [];
+const createRegisterComponentMessage = ({ component: _, ...info }) => ({
+  type: "builder.registerComponent",
+  data: prepareComponentInfoToSend(info)
+});
+const fastClone = (obj) => JSON.parse(JSON.stringify(obj));
+const serializeValue = (value) => typeof value === "function" ? serializeFn(value) : fastClone(value);
+const serializeFn = (fnValue) => {
+  const fnStr = fnValue.toString().trim();
+  const appendFunction = !fnStr.startsWith("function") && !fnStr.startsWith("(");
+  return `return (${appendFunction ? "function " : ""}${fnStr}).apply(this, arguments)`;
+};
+const prepareComponentInfoToSend = ({ inputs, ...info }) => ({
+  ...fastClone(info),
+  inputs: inputs == null ? void 0 : inputs.map((input) => Object.entries(input).reduce((acc, [key, value]) => ({
+    ...acc,
+    [key]: serializeValue(value)
+  }), {}))
+});
+function uuidv4() {
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, function(c) {
+    const r = Math.random() * 16 | 0, v = c == "x" ? r : r & 3 | 8;
+    return v.toString(16);
+  });
+}
+function uuid() {
+  return uuidv4().replace(/-/g, "");
+}
+const SESSION_LOCAL_STORAGE_KEY = "builderSessionId";
+const getSessionId = async ({ canTrack }) => {
+  if (!canTrack)
+    return void 0;
+  const sessionId = await getCookie({
+    name: SESSION_LOCAL_STORAGE_KEY,
+    canTrack
+  });
+  if (checkIsDefined(sessionId))
+    return sessionId;
+  else {
+    const newSessionId = createSessionId();
+    setSessionId({
+      id: newSessionId,
+      canTrack
+    });
+  }
+};
+const createSessionId = () => uuid();
+const setSessionId = ({ id, canTrack }) => setCookie({
+  name: SESSION_LOCAL_STORAGE_KEY,
+  value: id,
+  canTrack
+});
+const getLocalStorage = () => isBrowser() && typeof localStorage !== "undefined" ? localStorage : void 0;
+const getLocalStorageItem = ({ key, canTrack }) => {
+  var _a2;
+  try {
+    if (canTrack)
+      return (_a2 = getLocalStorage()) == null ? void 0 : _a2.getItem(key);
+    return void 0;
+  } catch (err) {
+    console.debug("[LocalStorage] GET error: ", err);
+  }
+};
+const setLocalStorageItem = ({ key, canTrack, value }) => {
+  var _a2;
+  try {
+    if (canTrack)
+      (_a2 = getLocalStorage()) == null ? void 0 : _a2.setItem(key, value);
+  } catch (err) {
+    console.debug("[LocalStorage] SET error: ", err);
+  }
+};
+const VISITOR_LOCAL_STORAGE_KEY = "builderVisitorId";
+const getVisitorId = ({ canTrack }) => {
+  if (!canTrack)
+    return void 0;
+  const visitorId = getLocalStorageItem({
+    key: VISITOR_LOCAL_STORAGE_KEY,
+    canTrack
+  });
+  if (checkIsDefined(visitorId))
+    return visitorId;
+  else {
+    const newVisitorId = createVisitorId();
+    setVisitorId({
+      id: newVisitorId,
+      canTrack
+    });
+  }
+};
+const createVisitorId = () => uuid();
+const setVisitorId = ({ id, canTrack }) => setLocalStorageItem({
+  key: VISITOR_LOCAL_STORAGE_KEY,
+  value: id,
+  canTrack
+});
+const getTrackingEventData = async ({ canTrack }) => {
+  if (!canTrack)
+    return {
+      visitorId: void 0,
+      sessionId: void 0
+    };
+  const sessionId = await getSessionId({
+    canTrack
+  });
+  const visitorId = getVisitorId({
+    canTrack
+  });
+  return {
+    sessionId,
+    visitorId
+  };
+};
+const createEvent = async ({ type: eventType, canTrack, orgId, contentId, ...properties }) => ({
+  type: eventType,
+  data: {
+    ...properties,
+    ...await getTrackingEventData({
+      canTrack
+    }),
+    ownerId: orgId,
+    contentId
+  }
+});
+async function track(eventProps) {
+  if (!eventProps.canTrack)
+    return;
+  if (isEditing())
+    return;
+  if (!(isBrowser() || TARGET === "reactNative"))
+    return;
+  return fetch(`https://builder.io/api/v1/track`, {
+    method: "POST",
+    body: JSON.stringify({
+      events: [
+        await createEvent(eventProps)
+      ]
+    }),
+    headers: {
+      "content-type": "application/json"
+    },
+    mode: "cors"
+  }).catch((err) => {
+    console.error("Failed to track: ", err);
+  });
+}
+const getCssFromFont = function getCssFromFont2(props, state, font) {
+  var _a2, _b;
+  const family = font.family + (font.kind && !font.kind.includes("#") ? ", " + font.kind : "");
+  const name = family.split(",")[0];
+  const url = (_b = font.fileUrl) != null ? _b : (_a2 = font == null ? void 0 : font.files) == null ? void 0 : _a2.regular;
+  let str = "";
+  if (url && family && name)
+    str += `
+  @font-face {
+    font-family: "${family}";
+    src: local("${name}"), url('${url}') format('woff2');
+    font-display: fallback;
+    font-weight: 400;
+  }
+          `.trim();
+  if (font.files)
+    for (const weight in font.files) {
+      const isNumber = String(Number(weight)) === weight;
+      if (!isNumber)
+        continue;
+      const weightUrl = font.files[weight];
+      if (weightUrl && weightUrl !== url)
+        str += `
+  @font-face {
+    font-family: "${family}";
+    src: url('${weightUrl}') format('woff2');
+    font-display: fallback;
+    font-weight: ${weight};
+  }
+            `.trim();
+    }
+  return str;
+};
+const getFontCss = function getFontCss2(props, state, { customFonts }) {
+  var _a2;
+  return ((_a2 = customFonts == null ? void 0 : customFonts.map((font) => getCssFromFont(props, state, font))) == null ? void 0 : _a2.join(" ")) || "";
+};
+const injectedStyles = function injectedStyles2(props, state) {
+  return `
+${props.cssCode || ""}
+${getFontCss(props, state, {
+    customFonts: props.customFonts
+  })}`;
+};
+const RenderContentStyles = /* @__PURE__ */ componentQrl(inlinedQrl((props) => {
+  const state = {
+    tagName: ""
+  };
+  return /* @__PURE__ */ jsx(RenderInlinedStyles$1, {
+    styles: injectedStyles(props, state)
+  });
+}, "RenderContentStyles_component_Og0xL34Zbvc"));
+const RenderContentStyles$1 = RenderContentStyles;
+const useContent = function useContent2(props, state, elementRef) {
+  var _a2, _b;
+  if (!props.content && !state.overrideContent)
+    return void 0;
+  const mergedContent = {
+    ...props.content,
+    ...state.overrideContent,
+    data: {
+      ...(_a2 = props.content) == null ? void 0 : _a2.data,
+      ...props.data,
+      ...(_b = state.overrideContent) == null ? void 0 : _b.data
+    }
+  };
+  return mergedContent;
+};
+const canTrackToUse = function canTrackToUse2(props, state, elementRef) {
+  return props.canTrack || true;
+};
+const contentState = function contentState2(props, state, elementRef) {
+  var _a2, _b;
+  return {
+    ...(_b = (_a2 = props.content) == null ? void 0 : _a2.data) == null ? void 0 : _b.state,
+    ...props.data,
+    ...state.overrideState
+  };
+};
+const contextContext = function contextContext2(props, state, elementRef) {
+  return props.context || {};
+};
+const allRegisteredComponents = function allRegisteredComponents2(props, state, elementRef) {
+  const allComponentsArray = [
+    ...getDefaultRegisteredComponents(),
+    ...components,
+    ...props.customComponents || []
+  ];
+  const allComponents = allComponentsArray.reduce((acc, curr) => ({
+    ...acc,
+    [curr.name]: curr
+  }), {});
+  return allComponents;
+};
+const processMessage = function processMessage2(props, state, elementRef, event) {
+  const { data } = event;
+  if (data)
+    switch (data.type) {
+      case "builder.contentUpdate": {
+        const messageContent = data.data;
+        const key = messageContent.key || messageContent.alias || messageContent.entry || messageContent.modelName;
+        const contentData = messageContent.data;
+        if (key === props.model) {
+          state.overrideContent = contentData;
+          state.forceReRenderCount = state.forceReRenderCount + 1;
+        }
+        break;
+      }
+    }
+};
+const evaluateJsCode = function evaluateJsCode2(props, state, elementRef) {
+  var _a2, _b;
+  const jsCode = (_b = (_a2 = useContent(props, state)) == null ? void 0 : _a2.data) == null ? void 0 : _b.jsCode;
+  if (jsCode)
+    evaluate({
+      code: jsCode,
+      context: contextContext(props),
+      state: contentState(props, state)
+    });
+};
+const httpReqsData = function httpReqsData2(props, state, elementRef) {
+  return {};
+};
+const onClick2 = function onClick3(props, state, elementRef, _event) {
+  var _a2;
+  if (useContent(props, state))
+    track({
+      type: "click",
+      canTrack: canTrackToUse(props),
+      contentId: (_a2 = useContent(props, state)) == null ? void 0 : _a2.id,
+      orgId: props.apiKey
+    });
+};
+const evalExpression = function evalExpression2(props, state, elementRef, expression) {
+  return expression.replace(/{{([^}]+)}}/g, (_match, group) => evaluate({
+    code: group,
+    context: contextContext(props),
+    state: contentState(props, state)
+  }));
+};
+const handleRequest = function handleRequest2(props, state, elementRef, { url, key }) {
+  getFetch().then((fetch2) => fetch2(url)).then((response) => response.json()).then((json) => {
+    const newOverrideState = {
+      ...state.overrideState,
+      [key]: json
+    };
+    state.overrideState = newOverrideState;
+  }).catch((err) => {
+    console.log("error fetching dynamic data", url, err);
+  });
+};
+const runHttpRequests = function runHttpRequests2(props, state, elementRef) {
+  var _a2, _b, _c;
+  const requests = (_c = (_b = (_a2 = useContent(props, state)) == null ? void 0 : _a2.data) == null ? void 0 : _b.httpRequests) != null ? _c : {};
+  Object.entries(requests).forEach(([key, url]) => {
+    if (url && (!httpReqsData()[key] || isEditing())) {
+      const evaluatedUrl = evalExpression(props, state, elementRef, url);
+      handleRequest(props, state, elementRef, {
+        url: evaluatedUrl,
+        key
+      });
+    }
+  });
+};
+const emitStateUpdate = function emitStateUpdate2(props, state, elementRef) {
+  if (isEditing())
+    window.dispatchEvent(new CustomEvent("builder:component:stateChange", {
+      detail: {
+        state: contentState(props, state),
+        ref: {
+          name: props.model
+        }
+      }
+    }));
+};
+const shouldRenderContentStyles = function shouldRenderContentStyles2(props, state, elementRef) {
+  var _a2, _b, _c, _d, _e;
+  return Boolean((((_b = (_a2 = useContent(props, state)) == null ? void 0 : _a2.data) == null ? void 0 : _b.cssCode) || ((_e = (_d = (_c = useContent(props, state)) == null ? void 0 : _c.data) == null ? void 0 : _d.customFonts) == null ? void 0 : _e.length)) && TARGET !== "reactNative");
+};
+const RenderContent = /* @__PURE__ */ componentQrl(inlinedQrl((props) => {
+  var _a2, _b, _c, _d, _e, _f, _g;
+  const elementRef = useRef();
+  const state = useStore({
+    forceReRenderCount: 0,
+    overrideContent: null,
+    overrideState: {},
+    update: 0
+  });
+  useContextProvider(BuilderContext, useStore({
+    content: (() => {
+      return useContent(props, state);
+    })(),
+    state: (() => {
+      return contentState(props, state);
+    })(),
+    context: (() => {
+      return contextContext(props);
+    })(),
+    apiKey: (() => {
+      return props.apiKey;
+    })(),
+    registeredComponents: (() => {
+      return allRegisteredComponents(props);
+    })()
+  }));
+  useClientEffectQrl(inlinedQrl(() => {
+    var _a3;
+    const [elementRef2, props2, state2] = useLexicalScope();
+    if (isBrowser()) {
+      if (isEditing()) {
+        state2.forceReRenderCount = state2.forceReRenderCount + 1;
+        registerInsertMenu();
+        setupBrowserForEditing();
+        Object.values(allRegisteredComponents(props2)).forEach((registeredComponent) => {
+          var _a4;
+          const message = createRegisterComponentMessage(registeredComponent);
+          (_a4 = window.parent) == null ? void 0 : _a4.postMessage(message, "*");
+        });
+        window.addEventListener("message", processMessage.bind(null, props2, state2, elementRef2));
+        window.addEventListener("builder:component:stateChangeListenerActivated", emitStateUpdate.bind(null, props2, state2, elementRef2));
+      }
+      if (useContent(props2, state2))
+        track({
+          type: "impression",
+          canTrack: canTrackToUse(props2),
+          contentId: (_a3 = useContent(props2, state2)) == null ? void 0 : _a3.id,
+          orgId: props2.apiKey
+        });
+      if (isPreviewing()) {
+        const searchParams = new URL(location.href).searchParams;
+        if (props2.model && searchParams.get("builder.preview") === props2.model) {
+          const previewApiKey = searchParams.get("apiKey") || searchParams.get("builder.space");
+          if (previewApiKey)
+            getContent({
+              model: props2.model,
+              apiKey: previewApiKey
+            }).then((content) => {
+              if (content)
+                state2.overrideContent = content;
+            });
+        }
+      }
+      evaluateJsCode(props2, state2);
+      runHttpRequests(props2, state2, elementRef2);
+      emitStateUpdate(props2, state2);
+    }
+  }, "RenderContent_component_useClientEffect_cA0sVHIkr5g", [
+    elementRef,
+    props,
+    state
+  ]));
+  useWatchQrl(inlinedQrl(({ track: track2 }) => {
+    var _a3, _b2;
+    const [elementRef2, props2, state2] = useLexicalScope();
+    ((_a3 = state2.useContent) == null ? void 0 : _a3.data) && track2((_b2 = state2.useContent) == null ? void 0 : _b2.data, "jsCode");
+    evaluateJsCode(props2, state2);
+  }, "RenderContent_component_useWatch_OIBatobA0hE", [
+    elementRef,
+    props,
+    state
+  ]));
+  useWatchQrl(inlinedQrl(({ track: track2 }) => {
+    var _a3, _b2;
+    const [elementRef2, props2, state2] = useLexicalScope();
+    ((_a3 = state2.useContent) == null ? void 0 : _a3.data) && track2((_b2 = state2.useContent) == null ? void 0 : _b2.data, "httpRequests");
+    runHttpRequests(props2, state2, elementRef2);
+  }, "RenderContent_component_useWatch_1_LQM67VNl14k", [
+    elementRef,
+    props,
+    state
+  ]));
+  useWatchQrl(inlinedQrl(({ track: track2 }) => {
+    const [elementRef2, props2, state2] = useLexicalScope();
+    state2 && track2(state2, "contentState");
+    emitStateUpdate(props2, state2);
+  }, "RenderContent_component_useWatch_2_aGi0RpYNBO0", [
+    elementRef,
+    props,
+    state
+  ]));
+  useCleanupQrl(inlinedQrl(() => {
+    const [elementRef2, props2, state2] = useLexicalScope();
+    if (isBrowser()) {
+      window.removeEventListener("message", processMessage.bind(null, props2, state2, elementRef2));
+      window.removeEventListener("builder:component:stateChangeListenerActivated", emitStateUpdate.bind(null, props2, state2, elementRef2));
+    }
+  }, "RenderContent_component_useCleanup_FwcO310HVAI", [
+    elementRef,
+    props,
+    state
+  ]));
+  return /* @__PURE__ */ jsx(Fragment$1, {
+    children: useContent(props, state) ? /* @__PURE__ */ jsx("div", {
+      ref: elementRef,
+      onClick$: inlinedQrl((event) => {
+        const [elementRef2, props2, state2] = useLexicalScope();
+        return onClick2(props2, state2);
+      }, "RenderContent_component__Fragment_div_onClick_wLg5o3ZkpC0", [
+        elementRef,
+        props,
+        state
+      ]),
+      "builder-content-id": (_a2 = useContent(props, state)) == null ? void 0 : _a2.id,
+      children: [
+        shouldRenderContentStyles(props, state) ? /* @__PURE__ */ jsx(RenderContentStyles$1, {
+          cssCode: (_c = (_b = useContent(props, state)) == null ? void 0 : _b.data) == null ? void 0 : _c.cssCode,
+          customFonts: (_e = (_d = useContent(props, state)) == null ? void 0 : _d.data) == null ? void 0 : _e.customFonts
+        }) : null,
+        /* @__PURE__ */ jsx(RenderBlocks$1, {
+          blocks: markMutable((_g = (_f = useContent(props, state)) == null ? void 0 : _f.data) == null ? void 0 : _g.blocks)
+        }, state.forceReRenderCount)
+      ]
+    }) : null
+  });
+}, "RenderContent_component_hEAI0ahViXM"));
+const RenderContent$1 = RenderContent;
+const Symbol$1 = /* @__PURE__ */ componentQrl(inlinedQrl((props) => {
+  var _a2, _b, _c, _d, _e;
+  const builderContext = useContext(BuilderContext);
+  const state = useStore({
+    className: "builder-symbol",
+    content: null
+  });
+  useClientEffectQrl(inlinedQrl(() => {
+    var _a3;
+    const [props2, state2] = useLexicalScope();
+    state2.content = (_a3 = props2.symbol) == null ? void 0 : _a3.content;
+  }, "Symbol_component_useClientEffect_Kfc9q3nzeSQ", [
+    props,
+    state
+  ]));
+  useWatchQrl(inlinedQrl(({ track: track2 }) => {
+    const [builderContext2, props2, state2] = useLexicalScope();
+    props2 && track2(props2, "symbol");
+    state2 && track2(state2, "content");
+    const symbolToUse = props2.symbol;
+    if (symbolToUse && !symbolToUse.content && !state2.content && symbolToUse.model)
+      getContent({
+        model: symbolToUse.model,
+        apiKey: builderContext2.apiKey,
+        query: {
+          id: symbolToUse.entry
+        }
+      }).then((response) => {
+        state2.content = response;
+      });
+  }, "Symbol_component_useWatch_9HNT04zd0Dk", [
+    builderContext,
+    props,
+    state
+  ]));
+  return /* @__PURE__ */ jsx("div", {
+    ...props.attributes,
+    class: state.className,
+    children: /* @__PURE__ */ jsx(RenderContent$1, {
+      apiKey: builderContext.apiKey,
+      context: builderContext.context,
+      customComponents: markMutable(Object.values(builderContext.registeredComponents)),
+      data: markMutable({
+        ...(_a2 = props.symbol) == null ? void 0 : _a2.data,
+        ...builderContext.state,
+        ...(_d = (_c = (_b = props.symbol) == null ? void 0 : _b.content) == null ? void 0 : _c.data) == null ? void 0 : _d.state
+      }),
+      model: (_e = props.symbol) == null ? void 0 : _e.model,
+      content: markMutable(state.content)
+    })
+  });
+}, "Symbol_component_WVvggdkUPdk"));
+const Symbol$2 = Symbol$1;
+const BUILDER_PUBLIC_API_KEY = "f5a098163c3741e19503f02a69360619";
+const BUILDER_MODEL = "page";
+const index = /* @__PURE__ */ componentQrl(inlinedQrl(() => {
+  const location2 = useLocation();
+  const builderContentRsrc = useResourceQrl(inlinedQrl(() => {
+    const [location3] = useLexicalScope();
+    return getContent({
+      model: BUILDER_MODEL,
+      apiKey: BUILDER_PUBLIC_API_KEY,
+      options: getBuilderSearchParams(location3.query),
+      userAttributes: {
+        urlPath: location3.pathname || "/"
+      }
+    });
+  }, "s_DVD34gdl1HI", [
+    location2
+  ]));
+  return /* @__PURE__ */ jsx(Resource, {
+    value: builderContentRsrc,
+    onPending: () => /* @__PURE__ */ jsx("div", {
+      children: "Loading..."
+    }),
+    onResolved: (content) => /* @__PURE__ */ jsx(RenderContent$1, {
+      model: BUILDER_MODEL,
+      content,
+      apiKey: BUILDER_PUBLIC_API_KEY
+    })
+  });
+}, "s_xYL1qOwPyDI"));
+const Index = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   __proto__: null,
-  default: index,
-  head
+  BUILDER_PUBLIC_API_KEY,
+  BUILDER_MODEL,
+  default: index
 }, Symbol.toStringTag, { value: "Module" }));
 const Layout = () => Layout_;
 const routes = [
-  [/^\/$/, [Layout, () => Index], void 0, "/", ["q-4f9208d6.js", "q-fdd832ac.js"]],
-  [/^\/flower\/?$/, [Layout, () => Flower], void 0, "/flower", ["q-4f9208d6.js", "q-998d2d0e.js"]]
+  [/^\/$/, [Layout, () => Index], void 0, "/", ["q-e5550dda.js", "q-573b6a29.js"]]
 ];
 const menus = [];
 const trailingSlash = false;
@@ -4867,7 +7312,7 @@ function applyPrefetchImplementation(opts, prefetchResources) {
       workerFetchImplementation(prefetchNodes, prefetchResources);
     }
     if (prefetchNodes.length > 0) {
-      return jsx(Fragment, { children: prefetchNodes });
+      return jsx(Fragment$1, { children: prefetchNodes });
     }
   }
   return null;
@@ -4884,15 +7329,15 @@ function linkHtmlImplementation(prefetchNodes, prefetchResources, prefetchImpl) 
   const urls = flattenPrefetchResources(prefetchResources);
   const rel = prefetchImpl.linkRel || "prefetch";
   for (const url of urls) {
-    const attributes = {};
-    attributes["href"] = url;
-    attributes["rel"] = rel;
+    const attributes3 = {};
+    attributes3["href"] = url;
+    attributes3["rel"] = rel;
     if (rel === "prefetch" || rel === "preload") {
       if (url.endsWith(".js")) {
-        attributes["as"] = "script";
+        attributes3["as"] = "script";
       }
     }
-    prefetchNodes.push(jsx("link", attributes, void 0));
+    prefetchNodes.push(jsx("link", attributes3, void 0));
   }
 }
 function linkJsImplementation(prefetchNodes, prefetchResources, prefetchImpl) {
@@ -5125,14 +7570,14 @@ async function renderToStream(rootNode, opts) {
       snapshotResult = await _pauseFromContexts(contexts, containerState);
       prefetchResources = getPrefetchResources(snapshotResult, opts, resolvedManifest);
       const jsonData = JSON.stringify(snapshotResult.state, void 0, qDev ? "  " : void 0);
-      const children = [
+      const children3 = [
         jsx("script", {
           type: "qwik/json",
           dangerouslySetInnerHTML: escapeText(jsonData)
         })
       ];
       if (prefetchResources.length > 0) {
-        children.push(applyPrefetchImplementation(opts, prefetchResources));
+        children3.push(applyPrefetchImplementation(opts, prefetchResources));
       }
       const needLoader = !snapshotResult || snapshotResult.mode !== "static";
       const includeMode = (_b2 = (_a3 = opts.qwikLoader) == null ? void 0 : _a3.include) != null ? _b2 : "auto";
@@ -5142,7 +7587,7 @@ async function renderToStream(rootNode, opts) {
           events: (_c2 = opts.qwikLoader) == null ? void 0 : _c2.events,
           debug: opts.debug
         });
-        children.push(
+        children3.push(
           jsx("script", {
             id: "qwikloader",
             dangerouslySetInnerHTML: qwikLoaderScript
@@ -5159,7 +7604,7 @@ async function renderToStream(rootNode, opts) {
         if (!includeLoader) {
           content = `window.qwikevents||=[];${content}`;
         }
-        children.push(
+        children3.push(
           jsx("script", {
             dangerouslySetInnerHTML: content
           })
@@ -5167,7 +7612,7 @@ async function renderToStream(rootNode, opts) {
       }
       collectRenderSymbols(renderSymbols, contexts);
       snapshotTime = snapshotTimer();
-      return jsx(Fragment, { children });
+      return jsx(Fragment$1, { children: children3 });
     }
   });
   flush();
@@ -5218,14 +7663,14 @@ function collectRenderSymbols(renderSymbols, elements) {
     }
   }
 }
-const manifest = { "symbols": { "s_hA9UPaY8sNQ": { "origin": "../node_modules/@builder.io/qwik-city/index.qwik.mjs", "displayName": "Link_component_a_onClick", "canonicalFilename": "s_ha9upay8snq", "hash": "hA9UPaY8sNQ", "ctxKind": "event", "ctxName": "onClick$", "captures": true, "parent": "s_mYsiJcA4IBc" }, "s_skxgNVWVOT8": { "origin": "../node_modules/@builder.io/qwik-city/index.qwik.mjs", "displayName": "Link_component_a_onMouseOver", "canonicalFilename": "s_skxgnvwvot8", "hash": "skxgNVWVOT8", "ctxKind": "event", "ctxName": "onMouseOver$", "captures": false, "parent": "s_mYsiJcA4IBc" }, "s_dznIGAlrcag": { "origin": "routes/flower/index.tsx", "displayName": "flower_component__Fragment_input_onInput", "canonicalFilename": "s_dznigalrcag", "hash": "dznIGAlrcag", "ctxKind": "event", "ctxName": "onInput$", "captures": true, "parent": "s_OW4nu0I1yZ8" }, "s_uVE5iM9H73c": { "origin": "../node_modules/@builder.io/qwik-city/index.qwik.mjs", "displayName": "Link_component_a_onQVisible", "canonicalFilename": "s_uve5im9h73c", "hash": "uVE5iM9H73c", "ctxKind": "event", "ctxName": "onQVisible$", "captures": false, "parent": "s_mYsiJcA4IBc" }, "s_AaAlzKH0KlQ": { "origin": "../node_modules/@builder.io/qwik-city/index.qwik.mjs", "displayName": "QwikCity_component_useWatch", "canonicalFilename": "s_aaalzkh0klq", "hash": "AaAlzKH0KlQ", "ctxKind": "function", "ctxName": "useWatch$", "captures": true, "parent": "s_z1nvHyEppoI" }, "s_V0Y6u0VD1eY": { "origin": "routes/flower/index.tsx", "displayName": "flower_component_useClientEffect", "canonicalFilename": "s_v0y6u0vd1ey", "hash": "V0Y6u0VD1eY", "ctxKind": "function", "ctxName": "useClientEffect$", "captures": true, "parent": "s_OW4nu0I1yZ8" }, "s_3sccYCDd1Z0": { "origin": "root.tsx", "displayName": "root_component", "canonicalFilename": "s_3sccycdd1z0", "hash": "3sccYCDd1Z0", "ctxKind": "function", "ctxName": "component$", "captures": false, "parent": null }, "s_OW4nu0I1yZ8": { "origin": "routes/flower/index.tsx", "displayName": "flower_component", "canonicalFilename": "s_ow4nu0i1yz8", "hash": "OW4nu0I1yZ8", "ctxKind": "function", "ctxName": "component$", "captures": false, "parent": null }, "s_VkLNXphUh5s": { "origin": "routes/layout.tsx", "displayName": "layout_component", "canonicalFilename": "s_vklnxphuh5s", "hash": "VkLNXphUh5s", "ctxKind": "function", "ctxName": "component$", "captures": false, "parent": null }, "s_ceU05TscGYE": { "origin": "components/header/header.tsx", "displayName": "header_component", "canonicalFilename": "s_ceu05tscgye", "hash": "ceU05TscGYE", "ctxKind": "function", "ctxName": "component$", "captures": false, "parent": null }, "s_mYsiJcA4IBc": { "origin": "../node_modules/@builder.io/qwik-city/index.qwik.mjs", "displayName": "Link_component", "canonicalFilename": "s_mysijca4ibc", "hash": "mYsiJcA4IBc", "ctxKind": "function", "ctxName": "component$", "captures": false, "parent": null }, "s_nd8yk3KO22c": { "origin": "../node_modules/@builder.io/qwik-city/index.qwik.mjs", "displayName": "RouterOutlet_component", "canonicalFilename": "s_nd8yk3ko22c", "hash": "nd8yk3KO22c", "ctxKind": "function", "ctxName": "component$", "captures": false, "parent": null }, "s_xYL1qOwPyDI": { "origin": "routes/index.tsx", "displayName": "routes_component", "canonicalFilename": "s_xyl1qowpydi", "hash": "xYL1qOwPyDI", "ctxKind": "function", "ctxName": "component$", "captures": false, "parent": null }, "s_z1nvHyEppoI": { "origin": "../node_modules/@builder.io/qwik-city/index.qwik.mjs", "displayName": "QwikCity_component", "canonicalFilename": "s_z1nvhyeppoi", "hash": "z1nvHyEppoI", "ctxKind": "function", "ctxName": "component$", "captures": false, "parent": null }, "s_zrbrqoaqXSY": { "origin": "components/router-head/router-head.tsx", "displayName": "RouterHead_component", "canonicalFilename": "s_zrbrqoaqxsy", "hash": "zrbrqoaqXSY", "ctxKind": "function", "ctxName": "component$", "captures": false, "parent": null }, "s_N39ca0w8E8Y": { "origin": "components/header/header.tsx", "displayName": "header_component_useStylesScoped", "canonicalFilename": "s_n39ca0w8e8y", "hash": "N39ca0w8E8Y", "ctxKind": "function", "ctxName": "useStylesScoped$", "captures": false, "parent": "s_ceU05TscGYE" }, "s_p4UiTwsJc7c": { "origin": "routes/flower/index.tsx", "displayName": "flower_component_useStylesScoped", "canonicalFilename": "s_p4uitwsjc7c", "hash": "p4UiTwsJc7c", "ctxKind": "function", "ctxName": "useStylesScoped$", "captures": false, "parent": "s_OW4nu0I1yZ8" } }, "mapping": { "s_hA9UPaY8sNQ": "q-ad454ab8.js", "s_skxgNVWVOT8": "q-ad454ab8.js", "s_dznIGAlrcag": "q-5d32fe84.js", "s_uVE5iM9H73c": "q-ad454ab8.js", "s_AaAlzKH0KlQ": "q-33079314.js", "s_V0Y6u0VD1eY": "q-5d32fe84.js", "s_3sccYCDd1Z0": "q-0feab01c.js", "s_OW4nu0I1yZ8": "q-5d32fe84.js", "s_VkLNXphUh5s": "q-5a653f27.js", "s_ceU05TscGYE": "q-c9692a3f.js", "s_mYsiJcA4IBc": "q-ad454ab8.js", "s_nd8yk3KO22c": "q-64b7caee.js", "s_xYL1qOwPyDI": "q-c36d0e7b.js", "s_z1nvHyEppoI": "q-33079314.js", "s_zrbrqoaqXSY": "q-af65b5df.js", "s_N39ca0w8E8Y": "q-c9692a3f.js", "s_p4UiTwsJc7c": "q-5d32fe84.js" }, "bundles": { "q-0feab01c.js": { "size": 4429, "imports": ["q-1181f841.js"], "dynamicImports": ["q-33079314.js", "q-64b7caee.js", "q-78538cd8.js", "q-ad454ab8.js", "q-af65b5df.js"], "origins": ["node_modules/@builder.io/qwik-city/index.qwik.mjs", "src/components/router-head/router-head.js", "src/entry_root.js", "src/s_3sccycdd1z0.js"], "symbols": ["s_3sccYCDd1Z0"] }, "q-1181f841.js": { "size": 36362, "dynamicImports": ["q-0feab01c.js"], "origins": ["\0vite/preload-helper", "node_modules/@builder.io/qwik/core.min.mjs", "src/global.css", "src/root.js"] }, "q-143c7194.js": { "size": 2180, "origins": ["node_modules/@builder.io/qwik-city/service-worker.mjs", "src/routes/service-worker.js"] }, "q-33079314.js": { "size": 1489, "imports": ["q-0feab01c.js", "q-1181f841.js"], "dynamicImports": ["q-78538cd8.js"], "origins": ["@builder.io/qwik/build", "src/entry_QwikCity.js", "src/s_aaalzkh0klq.js", "src/s_z1nvhyeppoi.js"], "symbols": ["s_AaAlzKH0KlQ", "s_z1nvHyEppoI"] }, "q-4f9208d6.js": { "size": 158, "imports": ["q-1181f841.js"], "dynamicImports": ["q-5a653f27.js"], "origins": ["src/routes/layout.js"] }, "q-5a653f27.js": { "size": 395, "imports": ["q-1181f841.js"], "dynamicImports": ["q-c9692a3f.js"], "origins": ["src/components/header/header.js", "src/entry_layout.js", "src/s_vklnxphuh5s.js"], "symbols": ["s_VkLNXphUh5s"] }, "q-5d32fe84.js": { "size": 2457, "imports": ["q-0feab01c.js", "q-1181f841.js"], "origins": ["src/entry_flower.js", "src/routes/flower/flower.css?used&inline", "src/s_dznigalrcag.js", "src/s_ow4nu0i1yz8.js", "src/s_p4uitwsjc7c.js", "src/s_v0y6u0vd1ey.js"], "symbols": ["s_dznIGAlrcag", "s_OW4nu0I1yZ8", "s_p4UiTwsJc7c", "s_V0Y6u0VD1eY"] }, "q-64b7caee.js": { "size": 269, "imports": ["q-0feab01c.js", "q-1181f841.js"], "origins": ["src/entry_RouterOutlet.js", "src/s_nd8yk3ko22c.js"], "symbols": ["s_nd8yk3KO22c"] }, "q-78538cd8.js": { "size": 424, "imports": ["q-1181f841.js"], "dynamicImports": ["q-4f9208d6.js", "q-998d2d0e.js", "q-e51bdfe5.js", "q-fdd832ac.js"], "origins": ["@qwik-city-plan"] }, "q-7d8b7e8a.js": { "size": 58, "imports": ["q-1181f841.js"] }, "q-998d2d0e.js": { "size": 192, "imports": ["q-1181f841.js"], "dynamicImports": ["q-5d32fe84.js"], "origins": ["src/routes/flower/index.js"] }, "q-ad454ab8.js": { "size": 886, "imports": ["q-0feab01c.js", "q-1181f841.js"], "origins": ["src/entry_Link.js", "src/s_ha9upay8snq.js", "src/s_mysijca4ibc.js", "src/s_skxgnvwvot8.js", "src/s_uve5im9h73c.js"], "symbols": ["s_hA9UPaY8sNQ", "s_mYsiJcA4IBc", "s_skxgNVWVOT8", "s_uVE5iM9H73c"] }, "q-af65b5df.js": { "size": 909, "imports": ["q-0feab01c.js", "q-1181f841.js"], "origins": ["src/entry_RouterHead.js", "src/s_zrbrqoaqxsy.js"], "symbols": ["s_zrbrqoaqXSY"] }, "q-c36d0e7b.js": { "size": 2698, "imports": ["q-0feab01c.js", "q-1181f841.js"], "origins": ["src/entry_routes.js", "src/s_xyl1qowpydi.js"], "symbols": ["s_xYL1qOwPyDI"] }, "q-c9692a3f.js": { "size": 4135, "imports": ["q-1181f841.js"], "origins": ["src/components/header/header.css?used&inline", "src/components/icons/qwik.js", "src/entry_header.js", "src/s_ceu05tscgye.js", "src/s_n39ca0w8e8y.js"], "symbols": ["s_ceU05TscGYE", "s_N39ca0w8E8Y"] }, "q-e51bdfe5.js": { "size": 128, "imports": ["q-1181f841.js"], "dynamicImports": ["q-143c7194.js"], "origins": ["@qwik-city-entries"] }, "q-fdd832ac.js": { "size": 196, "imports": ["q-1181f841.js"], "dynamicImports": ["q-c36d0e7b.js"], "origins": ["src/routes/index.js"] } }, "injections": [{ "tag": "link", "location": "head", "attributes": { "rel": "stylesheet", "href": "/build/q-0ea8883c.css" } }], "version": "1", "options": { "target": "client", "buildMode": "production", "forceFullBuild": true, "entryStrategy": { "type": "smart" } }, "platform": { "qwik": "0.9.0", "vite": "", "rollup": "2.78.1", "env": "node", "os": "darwin", "node": "16.17.0" } };
+const manifest = { "symbols": { "s_RzhhZa265Yg": { "origin": "../node_modules/@builder.io/sdk-qwik/lib/index.qwik.mjs", "displayName": "RenderBlocks_component_div_onClick", "canonicalFilename": "s_rzhhza265yg", "hash": "RzhhZa265Yg", "ctxKind": "event", "ctxName": "onClick$", "captures": true, "parent": "s_MYUZ0j1uLsw" }, "s_hA9UPaY8sNQ": { "origin": "../node_modules/@builder.io/qwik-city/index.qwik.mjs", "displayName": "Link_component_a_onClick", "canonicalFilename": "s_ha9upay8snq", "hash": "hA9UPaY8sNQ", "ctxKind": "event", "ctxName": "onClick$", "captures": true, "parent": "s_mYsiJcA4IBc" }, "s_wLg5o3ZkpC0": { "origin": "../node_modules/@builder.io/sdk-qwik/lib/index.qwik.mjs", "displayName": "RenderContent_component__Fragment_div_onClick", "canonicalFilename": "s_wlg5o3zkpc0", "hash": "wLg5o3ZkpC0", "ctxKind": "event", "ctxName": "onClick$", "captures": true, "parent": "s_hEAI0ahViXM" }, "s_nG7I7RYG3JQ": { "origin": "../node_modules/@builder.io/sdk-qwik/lib/index.qwik.mjs", "displayName": "RenderBlocks_component_div_onMouseEnter", "canonicalFilename": "s_ng7i7ryg3jq", "hash": "nG7I7RYG3JQ", "ctxKind": "event", "ctxName": "onMouseEnter$", "captures": true, "parent": "s_MYUZ0j1uLsw" }, "s_skxgNVWVOT8": { "origin": "../node_modules/@builder.io/qwik-city/index.qwik.mjs", "displayName": "Link_component_a_onMouseOver", "canonicalFilename": "s_skxgnvwvot8", "hash": "skxgNVWVOT8", "ctxKind": "event", "ctxName": "onMouseOver$", "captures": false, "parent": "s_mYsiJcA4IBc" }, "s_uVE5iM9H73c": { "origin": "../node_modules/@builder.io/qwik-city/index.qwik.mjs", "displayName": "Link_component_a_onQVisible", "canonicalFilename": "s_uve5im9h73c", "hash": "uVE5iM9H73c", "ctxKind": "event", "ctxName": "onQVisible$", "captures": false, "parent": "s_mYsiJcA4IBc" }, "s_9HNT04zd0Dk": { "origin": "../node_modules/@builder.io/sdk-qwik/lib/index.qwik.mjs", "displayName": "Symbol_component_useWatch", "canonicalFilename": "s_9hnt04zd0dk", "hash": "9HNT04zd0Dk", "ctxKind": "function", "ctxName": "useWatch$", "captures": true, "parent": "s_WVvggdkUPdk" }, "s_AaAlzKH0KlQ": { "origin": "../node_modules/@builder.io/qwik-city/index.qwik.mjs", "displayName": "QwikCity_component_useWatch", "canonicalFilename": "s_aaalzkh0klq", "hash": "AaAlzKH0KlQ", "ctxKind": "function", "ctxName": "useWatch$", "captures": true, "parent": "s_z1nvHyEppoI" }, "s_AxgWjrHdlAI": { "origin": "../node_modules/@builder.io/sdk-qwik/lib/index.qwik.mjs", "displayName": "Embed_component_useWatch", "canonicalFilename": "s_axgwjrhdlai", "hash": "AxgWjrHdlAI", "ctxKind": "function", "ctxName": "useWatch$", "captures": true, "parent": "s_Uji08ORjXbE" }, "s_LQM67VNl14k": { "origin": "../node_modules/@builder.io/sdk-qwik/lib/index.qwik.mjs", "displayName": "RenderContent_component_useWatch_1", "canonicalFilename": "s_lqm67vnl14k", "hash": "LQM67VNl14k", "ctxKind": "function", "ctxName": "useWatch$", "captures": true, "parent": "s_hEAI0ahViXM" }, "s_OIBatobA0hE": { "origin": "../node_modules/@builder.io/sdk-qwik/lib/index.qwik.mjs", "displayName": "RenderContent_component_useWatch", "canonicalFilename": "s_oibatoba0he", "hash": "OIBatobA0hE", "ctxKind": "function", "ctxName": "useWatch$", "captures": true, "parent": "s_hEAI0ahViXM" }, "s_aGi0RpYNBO0": { "origin": "../node_modules/@builder.io/sdk-qwik/lib/index.qwik.mjs", "displayName": "RenderContent_component_useWatch_2", "canonicalFilename": "s_agi0rpynbo0", "hash": "aGi0RpYNBO0", "ctxKind": "function", "ctxName": "useWatch$", "captures": true, "parent": "s_hEAI0ahViXM" }, "s_4w4c951ufB4": { "origin": "../node_modules/@builder.io/sdk-qwik/lib/index.qwik.mjs", "displayName": "CustomCode_component_useClientEffect", "canonicalFilename": "s_4w4c951ufb4", "hash": "4w4c951ufB4", "ctxKind": "function", "ctxName": "useClientEffect$", "captures": true, "parent": "s_uYOSy7w7Zqw" }, "s_Kfc9q3nzeSQ": { "origin": "../node_modules/@builder.io/sdk-qwik/lib/index.qwik.mjs", "displayName": "Symbol_component_useClientEffect", "canonicalFilename": "s_kfc9q3nzesq", "hash": "Kfc9q3nzeSQ", "ctxKind": "function", "ctxName": "useClientEffect$", "captures": true, "parent": "s_WVvggdkUPdk" }, "s_cA0sVHIkr5g": { "origin": "../node_modules/@builder.io/sdk-qwik/lib/index.qwik.mjs", "displayName": "RenderContent_component_useClientEffect", "canonicalFilename": "s_ca0svhikr5g", "hash": "cA0sVHIkr5g", "ctxKind": "function", "ctxName": "useClientEffect$", "captures": true, "parent": "s_hEAI0ahViXM" }, "s_15p0cKUxgIE": { "origin": "../node_modules/@builder.io/sdk-qwik/lib/index.qwik.mjs", "displayName": "Text_component", "canonicalFilename": "s_15p0ckuxgie", "hash": "15p0cKUxgIE", "ctxKind": "function", "ctxName": "component$", "captures": false, "parent": null }, "s_3sccYCDd1Z0": { "origin": "root.tsx", "displayName": "root_component", "canonicalFilename": "s_3sccycdd1z0", "hash": "3sccYCDd1Z0", "ctxKind": "function", "ctxName": "component$", "captures": false, "parent": null }, "s_7yLj4bxdI6c": { "origin": "../node_modules/@builder.io/sdk-qwik/lib/index.qwik.mjs", "displayName": "Columns_component", "canonicalFilename": "s_7ylj4bxdi6c", "hash": "7yLj4bxdI6c", "ctxKind": "function", "ctxName": "component$", "captures": false, "parent": null }, "s_FXvIDBSffO8": { "origin": "../node_modules/@builder.io/sdk-qwik/lib/index.qwik.mjs", "displayName": "ImgComponent_component", "canonicalFilename": "s_fxvidbsffo8", "hash": "FXvIDBSffO8", "ctxKind": "function", "ctxName": "component$", "captures": false, "parent": null }, "s_LRxDkFa1EfU": { "origin": "../node_modules/@builder.io/sdk-qwik/lib/index.qwik.mjs", "displayName": "Image_component", "canonicalFilename": "s_lrxdkfa1efu", "hash": "LRxDkFa1EfU", "ctxKind": "function", "ctxName": "component$", "captures": false, "parent": null }, "s_MYUZ0j1uLsw": { "origin": "../node_modules/@builder.io/sdk-qwik/lib/index.qwik.mjs", "displayName": "RenderBlocks_component", "canonicalFilename": "s_myuz0j1ulsw", "hash": "MYUZ0j1uLsw", "ctxKind": "function", "ctxName": "component$", "captures": false, "parent": null }, "s_Og0xL34Zbvc": { "origin": "../node_modules/@builder.io/sdk-qwik/lib/index.qwik.mjs", "displayName": "RenderContentStyles_component", "canonicalFilename": "s_og0xl34zbvc", "hash": "Og0xL34Zbvc", "ctxKind": "function", "ctxName": "component$", "captures": false, "parent": null }, "s_T0AypnadAK0": { "origin": "../node_modules/@builder.io/sdk-qwik/lib/index.qwik.mjs", "displayName": "FragmentComponent_component", "canonicalFilename": "s_t0aypnadak0", "hash": "T0AypnadAK0", "ctxKind": "function", "ctxName": "component$", "captures": false, "parent": null }, "s_Uji08ORjXbE": { "origin": "../node_modules/@builder.io/sdk-qwik/lib/index.qwik.mjs", "displayName": "Embed_component", "canonicalFilename": "s_uji08orjxbe", "hash": "Uji08ORjXbE", "ctxKind": "function", "ctxName": "component$", "captures": false, "parent": null }, "s_VkLNXphUh5s": { "origin": "routes/layout.tsx", "displayName": "layout_component", "canonicalFilename": "s_vklnxphuh5s", "hash": "VkLNXphUh5s", "ctxKind": "function", "ctxName": "component$", "captures": false, "parent": null }, "s_WVvggdkUPdk": { "origin": "../node_modules/@builder.io/sdk-qwik/lib/index.qwik.mjs", "displayName": "Symbol_component", "canonicalFilename": "s_wvvggdkupdk", "hash": "WVvggdkUPdk", "ctxKind": "function", "ctxName": "component$", "captures": false, "parent": null }, "s_ZWF9iD5WeLg": { "origin": "../node_modules/@builder.io/sdk-qwik/lib/index.qwik.mjs", "displayName": "SectionComponent_component", "canonicalFilename": "s_zwf9id5welg", "hash": "ZWF9iD5WeLg", "ctxKind": "function", "ctxName": "component$", "captures": false, "parent": null }, "s_ceU05TscGYE": { "origin": "components/header/header.tsx", "displayName": "header_component", "canonicalFilename": "s_ceu05tscgye", "hash": "ceU05TscGYE", "ctxKind": "function", "ctxName": "component$", "captures": false, "parent": null }, "s_gJoMUICXoUQ": { "origin": "../node_modules/@builder.io/sdk-qwik/lib/index.qwik.mjs", "displayName": "Button_component", "canonicalFilename": "s_gjomuicxouq", "hash": "gJoMUICXoUQ", "ctxKind": "function", "ctxName": "component$", "captures": false, "parent": null }, "s_hEAI0ahViXM": { "origin": "../node_modules/@builder.io/sdk-qwik/lib/index.qwik.mjs", "displayName": "RenderContent_component", "canonicalFilename": "s_heai0ahvixm", "hash": "hEAI0ahViXM", "ctxKind": "function", "ctxName": "component$", "captures": false, "parent": null }, "s_mYsiJcA4IBc": { "origin": "../node_modules/@builder.io/qwik-city/index.qwik.mjs", "displayName": "Link_component", "canonicalFilename": "s_mysijca4ibc", "hash": "mYsiJcA4IBc", "ctxKind": "function", "ctxName": "component$", "captures": false, "parent": null }, "s_nRyVBtbGKc8": { "origin": "../node_modules/@builder.io/sdk-qwik/lib/index.qwik.mjs", "displayName": "RenderRepeatedBlock_component", "canonicalFilename": "s_nryvbtbgkc8", "hash": "nRyVBtbGKc8", "ctxKind": "function", "ctxName": "component$", "captures": false, "parent": null }, "s_nd8yk3KO22c": { "origin": "../node_modules/@builder.io/qwik-city/index.qwik.mjs", "displayName": "RouterOutlet_component", "canonicalFilename": "s_nd8yk3ko22c", "hash": "nd8yk3KO22c", "ctxKind": "function", "ctxName": "component$", "captures": false, "parent": null }, "s_qdcTZflYyoQ": { "origin": "../node_modules/@builder.io/sdk-qwik/lib/index.qwik.mjs", "displayName": "Video_component", "canonicalFilename": "s_qdctzflyyoq", "hash": "qdcTZflYyoQ", "ctxKind": "function", "ctxName": "component$", "captures": false, "parent": null }, "s_uYOSy7w7Zqw": { "origin": "../node_modules/@builder.io/sdk-qwik/lib/index.qwik.mjs", "displayName": "CustomCode_component", "canonicalFilename": "s_uyosy7w7zqw", "hash": "uYOSy7w7Zqw", "ctxKind": "function", "ctxName": "component$", "captures": false, "parent": null }, "s_xYL1qOwPyDI": { "origin": "routes/index.tsx", "displayName": "routes_component", "canonicalFilename": "s_xyl1qowpydi", "hash": "xYL1qOwPyDI", "ctxKind": "function", "ctxName": "component$", "captures": false, "parent": null }, "s_z1nvHyEppoI": { "origin": "../node_modules/@builder.io/qwik-city/index.qwik.mjs", "displayName": "QwikCity_component", "canonicalFilename": "s_z1nvhyeppoi", "hash": "z1nvHyEppoI", "ctxKind": "function", "ctxName": "component$", "captures": false, "parent": null }, "s_zrbrqoaqXSY": { "origin": "components/router-head/router-head.tsx", "displayName": "RouterHead_component", "canonicalFilename": "s_zrbrqoaqxsy", "hash": "zrbrqoaqXSY", "ctxKind": "function", "ctxName": "component$", "captures": false, "parent": null }, "s_0XKYzaR059E": { "origin": "../node_modules/@builder.io/sdk-qwik/lib/index.qwik.mjs", "displayName": "RenderBlocks_component_useStylesScoped", "canonicalFilename": "s_0xkyzar059e", "hash": "0XKYzaR059E", "ctxKind": "function", "ctxName": "useStylesScoped$", "captures": false, "parent": "s_MYUZ0j1uLsw" }, "s_N39ca0w8E8Y": { "origin": "components/header/header.tsx", "displayName": "header_component_useStylesScoped", "canonicalFilename": "s_n39ca0w8e8y", "hash": "N39ca0w8E8Y", "ctxKind": "function", "ctxName": "useStylesScoped$", "captures": false, "parent": "s_ceU05TscGYE" }, "s_a1JZ0Q0Q2Oc": { "origin": "../node_modules/@builder.io/sdk-qwik/lib/index.qwik.mjs", "displayName": "Button_component_useStylesScoped", "canonicalFilename": "s_a1jz0q0q2oc", "hash": "a1JZ0Q0Q2Oc", "ctxKind": "function", "ctxName": "useStylesScoped$", "captures": false, "parent": "s_gJoMUICXoUQ" }, "s_fBMYiVf9fuU": { "origin": "../node_modules/@builder.io/sdk-qwik/lib/index.qwik.mjs", "displayName": "Image_component_useStylesScoped", "canonicalFilename": "s_fbmyivf9fuu", "hash": "fBMYiVf9fuU", "ctxKind": "function", "ctxName": "useStylesScoped$", "captures": false, "parent": "s_LRxDkFa1EfU" }, "s_s7JLZz7MCCQ": { "origin": "../node_modules/@builder.io/sdk-qwik/lib/index.qwik.mjs", "displayName": "Columns_component_useStylesScoped", "canonicalFilename": "s_s7jlzz7mccq", "hash": "s7JLZz7MCCQ", "ctxKind": "function", "ctxName": "useStylesScoped$", "captures": false, "parent": "s_7yLj4bxdI6c" }, "s_wgxT8Hlq4s8": { "origin": "../node_modules/@builder.io/sdk-qwik/lib/index.qwik.mjs", "displayName": "crateEventHandler", "canonicalFilename": "s_wgxt8hlq4s8", "hash": "wgxT8Hlq4s8", "ctxKind": "function", "ctxName": "crateEventHandler", "captures": true, "parent": null }, "s_DVD34gdl1HI": { "origin": "routes/index.tsx", "displayName": "routes_component_builderContentRsrc_useResource", "canonicalFilename": "s_dvd34gdl1hi", "hash": "DVD34gdl1HI", "ctxKind": "function", "ctxName": "useResource$", "captures": true, "parent": "s_xYL1qOwPyDI" }, "s_FwcO310HVAI": { "origin": "../node_modules/@builder.io/sdk-qwik/lib/index.qwik.mjs", "displayName": "RenderContent_component_useCleanup", "canonicalFilename": "s_fwco310hvai", "hash": "FwcO310HVAI", "ctxKind": "function", "ctxName": "useCleanup$", "captures": true, "parent": "s_hEAI0ahViXM" } }, "mapping": { "s_RzhhZa265Yg": "q-d3a0a93e.js", "s_hA9UPaY8sNQ": "q-4e883eb6.js", "s_wLg5o3ZkpC0": "q-9d3c6760.js", "s_nG7I7RYG3JQ": "q-d3a0a93e.js", "s_skxgNVWVOT8": "q-4e883eb6.js", "s_uVE5iM9H73c": "q-4e883eb6.js", "s_9HNT04zd0Dk": "q-24dbf55f.js", "s_AaAlzKH0KlQ": "q-61e3c0a5.js", "s_AxgWjrHdlAI": "q-83ee1bc3.js", "s_LQM67VNl14k": "q-9d3c6760.js", "s_OIBatobA0hE": "q-9d3c6760.js", "s_aGi0RpYNBO0": "q-9d3c6760.js", "s_4w4c951ufB4": "q-dd86e792.js", "s_Kfc9q3nzeSQ": "q-24dbf55f.js", "s_cA0sVHIkr5g": "q-9d3c6760.js", "s_15p0cKUxgIE": "q-98d25f68.js", "s_3sccYCDd1Z0": "q-b3089290.js", "s_7yLj4bxdI6c": "q-95964c8d.js", "s_FXvIDBSffO8": "q-ab2e60c1.js", "s_LRxDkFa1EfU": "q-6055c3bd.js", "s_MYUZ0j1uLsw": "q-d3a0a93e.js", "s_Og0xL34Zbvc": "q-fd029402.js", "s_T0AypnadAK0": "q-dc1cbcd2.js", "s_Uji08ORjXbE": "q-83ee1bc3.js", "s_VkLNXphUh5s": "q-63378bfa.js", "s_WVvggdkUPdk": "q-24dbf55f.js", "s_ZWF9iD5WeLg": "q-79712f05.js", "s_ceU05TscGYE": "q-98c39395.js", "s_gJoMUICXoUQ": "q-8d346140.js", "s_hEAI0ahViXM": "q-9d3c6760.js", "s_mYsiJcA4IBc": "q-4e883eb6.js", "s_nRyVBtbGKc8": "q-47c8ae6e.js", "s_nd8yk3KO22c": "q-c54de965.js", "s_qdcTZflYyoQ": "q-4a11ae40.js", "s_uYOSy7w7Zqw": "q-dd86e792.js", "s_xYL1qOwPyDI": "q-78e418dd.js", "s_z1nvHyEppoI": "q-61e3c0a5.js", "s_zrbrqoaqXSY": "q-65a4c6a6.js", "s_0XKYzaR059E": "q-d3a0a93e.js", "s_N39ca0w8E8Y": "q-98c39395.js", "s_a1JZ0Q0Q2Oc": "q-8d346140.js", "s_fBMYiVf9fuU": "q-6055c3bd.js", "s_s7JLZz7MCCQ": "q-95964c8d.js", "s_wgxT8Hlq4s8": "q-d9312094.js", "s_DVD34gdl1HI": "q-78e418dd.js", "s_FwcO310HVAI": "q-9d3c6760.js" }, "bundles": { "q-143c7194.js": { "size": 2180, "origins": ["node_modules/@builder.io/qwik-city/service-worker.mjs", "src/routes/service-worker.js"] }, "q-24dbf55f.js": { "size": 1360, "imports": ["q-573b6a29.js", "q-78e418dd.js", "q-b3089290.js", "q-fbca3fbb.js"], "origins": ["src/entry_Symbol1.js", "src/s_9hnt04zd0dk.js", "src/s_kfc9q3nzesq.js", "src/s_wvvggdkupdk.js"], "symbols": ["s_9HNT04zd0Dk", "s_Kfc9q3nzeSQ", "s_WVvggdkUPdk"] }, "q-47c8ae6e.js": { "size": 457, "imports": ["q-573b6a29.js", "q-78e418dd.js", "q-b3089290.js", "q-fbca3fbb.js"], "origins": ["src/entry_RenderRepeatedBlock.js", "src/s_nryvbtbgkc8.js"], "symbols": ["s_nRyVBtbGKc8"] }, "q-4a11ae40.js": { "size": 371, "imports": ["q-573b6a29.js", "q-78e418dd.js", "q-b3089290.js", "q-fbca3fbb.js"], "origins": ["src/entry_Video.js", "src/s_qdctzflyyoq.js"], "symbols": ["s_qdcTZflYyoQ"] }, "q-4e883eb6.js": { "size": 886, "imports": ["q-b3089290.js", "q-fbca3fbb.js"], "origins": ["src/entry_Link.js", "src/s_ha9upay8snq.js", "src/s_mysijca4ibc.js", "src/s_skxgnvwvot8.js", "src/s_uve5im9h73c.js"], "symbols": ["s_hA9UPaY8sNQ", "s_mYsiJcA4IBc", "s_skxgNVWVOT8", "s_uVE5iM9H73c"] }, "q-4fbe596c.js": { "size": 346, "imports": ["q-fbca3fbb.js"], "dynamicImports": ["q-573b6a29.js", "q-a16be6b8.js", "q-e5550dda.js"], "origins": ["@qwik-city-plan"] }, "q-573b6a29.js": { "size": 264, "imports": ["q-fbca3fbb.js"], "dynamicImports": ["q-78e418dd.js"], "origins": ["src/routes/index.js"] }, "q-6055c3bd.js": { "size": 1221, "imports": ["q-573b6a29.js", "q-78e418dd.js", "q-b3089290.js", "q-fbca3fbb.js"], "origins": ["src/entry_Image.js", "src/s_fbmyivf9fuu.js", "src/s_lrxdkfa1efu.js"], "symbols": ["s_fBMYiVf9fuU", "s_LRxDkFa1EfU"] }, "q-61e3c0a5.js": { "size": 1489, "imports": ["q-b3089290.js", "q-fbca3fbb.js"], "dynamicImports": ["q-4fbe596c.js"], "origins": ["@builder.io/qwik/build", "src/entry_QwikCity.js", "src/s_aaalzkh0klq.js", "src/s_z1nvhyeppoi.js"], "symbols": ["s_AaAlzKH0KlQ", "s_z1nvHyEppoI"] }, "q-63378bfa.js": { "size": 395, "imports": ["q-fbca3fbb.js"], "dynamicImports": ["q-98c39395.js"], "origins": ["src/components/header/header.js", "src/entry_layout.js", "src/s_vklnxphuh5s.js"], "symbols": ["s_VkLNXphUh5s"] }, "q-65a4c6a6.js": { "size": 909, "imports": ["q-b3089290.js", "q-fbca3fbb.js"], "origins": ["src/entry_RouterHead.js", "src/s_zrbrqoaqxsy.js"], "symbols": ["s_zrbrqoaqXSY"] }, "q-78e418dd.js": { "size": 35044, "imports": ["q-573b6a29.js", "q-b3089290.js", "q-fbca3fbb.js"], "dynamicImports": ["q-24dbf55f.js", "q-47c8ae6e.js", "q-4a11ae40.js", "q-6055c3bd.js", "q-79712f05.js", "q-83ee1bc3.js", "q-8d346140.js", "q-95964c8d.js", "q-98d25f68.js", "q-9d3c6760.js", "q-ab2e60c1.js", "q-d3a0a93e.js", "q-d9312094.js", "q-dc1cbcd2.js", "q-dd86e792.js", "q-fd029402.js"], "origins": ["node_modules/@builder.io/sdk-qwik/lib/index.qwik.mjs", "src/entry_routes.js", "src/s_dvd34gdl1hi.js", "src/s_xyl1qowpydi.js"], "symbols": ["s_DVD34gdl1HI", "s_xYL1qOwPyDI"] }, "q-79712f05.js": { "size": 198, "imports": ["q-fbca3fbb.js"], "origins": ["src/entry_SectionComponent.js", "src/s_zwf9id5welg.js"], "symbols": ["s_ZWF9iD5WeLg"] }, "q-83ee1bc3.js": { "size": 737, "imports": ["q-573b6a29.js", "q-78e418dd.js", "q-b3089290.js", "q-fbca3fbb.js"], "origins": ["src/entry_Embed.js", "src/s_axgwjrhdlai.js", "src/s_uji08orjxbe.js"], "symbols": ["s_AxgWjrHdlAI", "s_Uji08ORjXbE"] }, "q-8d346140.js": { "size": 619, "imports": ["q-573b6a29.js", "q-78e418dd.js", "q-b3089290.js", "q-fbca3fbb.js"], "origins": ["src/entry_Button.js", "src/s_a1jz0q0q2oc.js", "src/s_gjomuicxouq.js"], "symbols": ["s_a1JZ0Q0Q2Oc", "s_gJoMUICXoUQ"] }, "q-95964c8d.js": { "size": 829, "imports": ["q-573b6a29.js", "q-78e418dd.js", "q-b3089290.js", "q-fbca3fbb.js"], "origins": ["src/entry_Columns.js", "src/s_7ylj4bxdi6c.js", "src/s_s7jlzz7mccq.js"], "symbols": ["s_7yLj4bxdI6c", "s_s7JLZz7MCCQ"] }, "q-98c39395.js": { "size": 4135, "imports": ["q-fbca3fbb.js"], "origins": ["src/components/header/header.css?used&inline", "src/components/icons/qwik.js", "src/entry_header.js", "src/s_ceu05tscgye.js", "src/s_n39ca0w8e8y.js"], "symbols": ["s_ceU05TscGYE", "s_N39ca0w8E8Y"] }, "q-98d25f68.js": { "size": 139, "imports": ["q-fbca3fbb.js"], "origins": ["src/entry_Text.js", "src/s_15p0ckuxgie.js"], "symbols": ["s_15p0cKUxgIE"] }, "q-9d3c6760.js": { "size": 3143, "imports": ["q-573b6a29.js", "q-78e418dd.js", "q-b3089290.js", "q-fbca3fbb.js"], "origins": ["src/entry_RenderContent.js", "src/s_agi0rpynbo0.js", "src/s_ca0svhikr5g.js", "src/s_fwco310hvai.js", "src/s_heai0ahvixm.js", "src/s_lqm67vnl14k.js", "src/s_oibatoba0he.js", "src/s_wlg5o3zkpc0.js"], "symbols": ["s_aGi0RpYNBO0", "s_cA0sVHIkr5g", "s_FwcO310HVAI", "s_hEAI0ahViXM", "s_LQM67VNl14k", "s_OIBatobA0hE", "s_wLg5o3ZkpC0"] }, "q-a16be6b8.js": { "size": 128, "imports": ["q-fbca3fbb.js"], "dynamicImports": ["q-143c7194.js"], "origins": ["@qwik-city-entries"] }, "q-ab2e60c1.js": { "size": 341, "imports": ["q-573b6a29.js", "q-78e418dd.js", "q-b3089290.js", "q-fbca3fbb.js"], "origins": ["src/entry_ImgComponent.js", "src/s_fxvidbsffo8.js"], "symbols": ["s_FXvIDBSffO8"] }, "q-b3089290.js": { "size": 4421, "imports": ["q-fbca3fbb.js"], "dynamicImports": ["q-4e883eb6.js", "q-4fbe596c.js", "q-61e3c0a5.js", "q-65a4c6a6.js", "q-c54de965.js"], "origins": ["node_modules/@builder.io/qwik-city/index.qwik.mjs", "src/components/router-head/router-head.js", "src/entry_root.js", "src/s_3sccycdd1z0.js"], "symbols": ["s_3sccYCDd1Z0"] }, "q-c54de965.js": { "size": 269, "imports": ["q-b3089290.js", "q-fbca3fbb.js"], "origins": ["src/entry_RouterOutlet.js", "src/s_nd8yk3ko22c.js"], "symbols": ["s_nd8yk3KO22c"] }, "q-d3a0a93e.js": { "size": 1149, "imports": ["q-573b6a29.js", "q-78e418dd.js", "q-b3089290.js", "q-fbca3fbb.js"], "origins": ["src/entry_RenderBlocks.js", "src/s_0xkyzar059e.js", "src/s_myuz0j1ulsw.js", "src/s_ng7i7ryg3jq.js", "src/s_rzhhza265yg.js"], "symbols": ["s_0XKYzaR059E", "s_MYUZ0j1uLsw", "s_nG7I7RYG3JQ", "s_RzhhZa265Yg"] }, "q-d9312094.js": { "size": 235, "imports": ["q-573b6a29.js", "q-78e418dd.js", "q-b3089290.js", "q-fbca3fbb.js"], "origins": ["src/entry_crateEventHandler.js", "src/s_wgxt8hlq4s8.js"], "symbols": ["s_wgxT8Hlq4s8"] }, "q-dc1cbcd2.js": { "size": 111, "imports": ["q-fbca3fbb.js"], "origins": ["src/entry_FragmentComponent.js", "src/s_t0aypnadak0.js"], "symbols": ["s_T0AypnadAK0"] }, "q-dd86e792.js": { "size": 701, "imports": ["q-573b6a29.js", "q-78e418dd.js", "q-b3089290.js", "q-fbca3fbb.js"], "origins": ["src/entry_CustomCode.js", "src/s_4w4c951ufb4.js", "src/s_uyosy7w7zqw.js"], "symbols": ["s_4w4c951ufB4", "s_uYOSy7w7Zqw"] }, "q-e5550dda.js": { "size": 158, "imports": ["q-fbca3fbb.js"], "dynamicImports": ["q-63378bfa.js"], "origins": ["src/routes/layout.js"] }, "q-f81e979f.js": { "size": 58, "imports": ["q-fbca3fbb.js"] }, "q-fbca3fbb.js": { "size": 37278, "dynamicImports": ["q-b3089290.js"], "origins": ["\0vite/preload-helper", "node_modules/@builder.io/qwik/core.min.mjs", "src/global.css", "src/root.js"] }, "q-fd029402.js": { "size": 198, "imports": ["q-573b6a29.js", "q-78e418dd.js", "q-b3089290.js", "q-fbca3fbb.js"], "origins": ["src/entry_RenderContentStyles.js", "src/s_og0xl34zbvc.js"], "symbols": ["s_Og0xL34Zbvc"] } }, "injections": [{ "tag": "link", "location": "head", "attributes": { "rel": "stylesheet", "href": "/build/q-0ea8883c.css" } }], "version": "1", "options": { "target": "client", "buildMode": "production", "forceFullBuild": true, "entryStrategy": { "type": "smart" } }, "platform": { "qwik": "0.9.0", "vite": "", "rollup": "2.78.1", "env": "node", "os": "darwin", "node": "16.17.0" } };
 const RouterHead = /* @__PURE__ */ componentQrl(inlinedQrl(() => {
-  const head2 = useDocumentHead();
+  const head = useDocumentHead();
   const loc = useLocation();
-  return /* @__PURE__ */ jsx(Fragment, {
+  return /* @__PURE__ */ jsx(Fragment$1, {
     children: [
       /* @__PURE__ */ jsx("title", {
-        children: head2.title
+        children: head.title
       }),
       /* @__PURE__ */ jsx("link", {
         rel: "canonical",
@@ -5265,13 +7710,13 @@ const RouterHead = /* @__PURE__ */ componentQrl(inlinedQrl(() => {
         name: "twitter:title",
         content: "Qwik"
       }),
-      head2.meta.map((m) => /* @__PURE__ */ jsx("meta", {
+      head.meta.map((m) => /* @__PURE__ */ jsx("meta", {
         ...m
       })),
-      head2.links.map((l) => /* @__PURE__ */ jsx("link", {
+      head.links.map((l) => /* @__PURE__ */ jsx("link", {
         ...l
       })),
-      head2.styles.map((s) => /* @__PURE__ */ jsx("style", {
+      head.styles.map((s) => /* @__PURE__ */ jsx("style", {
         ...s.props,
         dangerouslySetInnerHTML: s.style
       }))

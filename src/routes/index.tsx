@@ -23,7 +23,7 @@ export default component$(() => {
   return (
     <Resource
       value={builderContentRsrc}
-      onPending={() => <div>Loading..0.</div>}
+      onPending={() => <div>Loading...</div>}
       onResolved={(content) => (
         <RenderContent
           model={BUILDER_MODEL}
