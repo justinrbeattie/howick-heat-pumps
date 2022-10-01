@@ -1,19 +1,34 @@
-import { component$} from "@builder.io/qwik";
-
+import {
+  component$,
+  useServerMount$,
+  useStore,
+} from "@builder.io/qwik";
+import { useLocation } from "@builder.io/qwik-city";
+import {
+  RenderContent,
+} from "@builder.io/sdk-qwik";
 
 export const BUILDER_PUBLIC_API_KEY = "f5a098163c3741e19503f02a69360619";
 export const BUILDER_MODEL = "page";
 
 export default component$(() => {
+  const location = useLocation();
+
+  const store = useStore({ data: { results: [] } });
+
+  useServerMount$(async () => {
+    const response = await fetch(
+      "https://cdn.builder.io/api/v2/content/page?apiKey=f5a098163c3741e19503f02a69360619&userAttributes.urlPath=" +
+        location.pathname || "/" + "&limit=1"
+    );
+    store.data = await response.json();
+  });
 
   return (
-<div>
-<script type="text/partytown" async src="https://cdn.builder.io/js/webcomponents"></script>
-<builder-component model={BUILDER_MODEL} api-key={BUILDER_PUBLIC_API_KEY}>
-  Loading...
-</builder-component>
-</div>
-
-
+    <RenderContent
+      model={BUILDER_MODEL}
+      content={store.data.results[0]}
+      apiKey={BUILDER_PUBLIC_API_KEY}
+    />
   );
 });
