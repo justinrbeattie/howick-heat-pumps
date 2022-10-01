@@ -8,7 +8,7 @@ export default component$(() => {
 
   return (
 <div>
-<script async src="https://cdn.builder.io/js/webcomponents"></script>
+<script type="text/partytown" async src="https://cdn.builder.io/js/webcomponents"></script>
 <builder-component model={BUILDER_MODEL} api-key={BUILDER_PUBLIC_API_KEY}>
   Loading...
 </builder-component>
