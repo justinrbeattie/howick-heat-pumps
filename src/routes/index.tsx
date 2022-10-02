@@ -17,9 +17,10 @@ export default component$(() => {
   const store = useStore({ data: { results: [] } });
 
   useServerMount$(async () => {
+    const queryString = '&'+ location.href.split('?')[1];
     const response = await fetch(
-      "https://cdn.builder.io/api/v2/content/page?apiKey=f5a098163c3741e19503f02a69360619&userAttributes.urlPath=" +
-        location.pathname || "/" + "&limit=1"
+      "https://cdn.builder.io/api/v2/content/page?apiKey=f5a098163c3741e19503f02a69360619&limit=1&userAttributes.urlPath=" +
+        location.pathname || "/" + queryString
     );
     store.data = await response.json();
   });
