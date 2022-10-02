@@ -13,11 +13,12 @@ export default component$(() => {
       "?url=https%3A%2F%2Fcosmic-dusk-68b932.netlify.app%2F&apiKey=" +
       BUILDER_PUBLIC_API_KEY +
       "&limit=1&userAttributes.urlPath=" +
-      location.pathname || "/&" + location.href.split('?')[1];
+      location.pathname || "/";
 
   useServerMount$(async () => {
     const response = await fetch(apiUrl);
     store.resp = await response.json();
+    console.log(store.resp.html);
   });
 
   return <div dangerouslySetInnerHTML={store.resp.html} />;
