@@ -1,10 +1,14 @@
 import {
   component$,
+  Resource,
+  useResource$,
   useServerMount$,
   useStore,
 } from "@builder.io/qwik";
 import { useLocation } from "@builder.io/qwik-city";
 import {
+  getBuilderSearchParams,
+  getContent,
   RenderContent,
 } from "@builder.io/sdk-qwik";
 
@@ -13,23 +17,47 @@ export const BUILDER_MODEL = "page";
 
 export default component$(() => {
   const location = useLocation();
+  const prod = location.query["__builder_editing__"] !== "true";
+console.log(prod);
+  if (prod) {
+    const store = useStore({ resp: {  html: "" } });
+    const apiUrl =  "https://cdn.builder.io/api/v1/qwik/" +
+    BUILDER_MODEL +
+    "?url=https%3A%2F%2Fcosmic-dusk-68b932.netlify.app%2F&apiKey=" +
+    BUILDER_PUBLIC_API_KEY +
+    "&limit=1&userAttributes.urlPath=" +
+    location.pathname || "/";
 
-  const store = useStore({ data: { results: [] } });
+    useServerMount$(async () => {
+      const response = await fetch(apiUrl);
+      store.resp = await response.json();
+    });
 
-  useServerMount$(async () => {
-    const queryString = '&'+ location.href.split('?')[1];
-    const response = await fetch(
-      "https://cdn.builder.io/api/v2/content/page?apiKey=f5a098163c3741e19503f02a69360619&limit=1&userAttributes.urlPath=" +
-        location.pathname || "/" + queryString
+    return <div dangerouslySetInnerHTML={store.resp.html} />;
+  } else {
+    const builderContentRsrc = useResource$<any>(() => {
+      return getContent({
+        model: BUILDER_MODEL,
+        apiKey: BUILDER_PUBLIC_API_KEY,
+        options: getBuilderSearchParams(location.query),
+        userAttributes: {
+          urlPath: location.pathname || "/",
+        },
+      });
+    });
+
+    return (
+      <Resource
+        value={builderContentRsrc}
+        onPending={() => <div>Loading...</div>}
+        onResolved={(content) => (
+          <RenderContent
+            model={BUILDER_MODEL}
+            content={content}
+            apiKey={BUILDER_PUBLIC_API_KEY}
+          />
+        )}
+      />
     );
-    store.data = await response.json();
-  });
-
-  return (
-    <RenderContent
-      model={BUILDER_MODEL}
-      content={store.data.results[0]}
-      apiKey={BUILDER_PUBLIC_API_KEY}
-    />
-  );
+  }
 });
