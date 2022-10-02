@@ -16,7 +16,6 @@ export default component$(() => {
       <head>
         <meta charSet="utf-8" />
         <RouterHead />
-        <script  type="text/partytown" src="https://cdn.jsdelivr.net/npm/@microsoft/fast-components/dist/fast-components.min.js"></script>
       </head>
       <body lang="en">
         <RouterOutlet />
