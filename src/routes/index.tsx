@@ -17,9 +17,8 @@ export const BUILDER_MODEL = "page";
 
 export default component$(() => {
   const location = useLocation();
-  const prod = location.query["__builder_editing__"] !== "true";
-console.log(prod);
-  if (prod) {
+  const iFrameDetection = (window === window.parent) ? false : true;
+  if (iFrameDetection === false) {
     const store = useStore({ resp: {  html: "" } });
     const apiUrl =  "https://cdn.builder.io/api/v1/qwik/" +
     BUILDER_MODEL +
