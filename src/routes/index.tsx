@@ -17,7 +17,7 @@ export const BUILDER_MODEL = "page";
 
 export default component$(() => {
   const location = useLocation();
-  const editing = location.pathname.includes('localhost');
+  const editing = location.href.includes('localhost');
   if (editing === false) {
     const store = useStore({ resp: {  html: "" } });
     const apiUrl =  "https://cdn.builder.io/api/v1/qwik/" +
