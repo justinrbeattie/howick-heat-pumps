@@ -1,6 +1,8 @@
 import {
   component$,
   Resource,
+  useClientEffect$,
+  useRef,
   useResource$,
   useServerMount$,
   useStore,
@@ -14,8 +16,9 @@ import {
 
 export const BUILDER_PUBLIC_API_KEY = "f5a098163c3741e19503f02a69360619";
 export const BUILDER_MODEL = "page";
+export const SITE_URL = "https%3A%2F%2Fcosmic-dusk-68b932.netlify.app";
 
-export default component$(() => {
+export const pageComponent = component$(() => {
   const location = useLocation();
   const editing = location.href.includes("localhost");
   if (editing === false) {
@@ -23,17 +26,27 @@ export default component$(() => {
     const apiUrl =
       "https://cdn.builder.io/api/v1/qwik/" +
         BUILDER_MODEL +
-        "?url=https%3A%2F%2Fcosmic-dusk-68b932.netlify.app%2F&apiKey=" +
+        "?url=" +
+        SITE_URL +
+        "%2F&apiKey=" +
         BUILDER_PUBLIC_API_KEY +
         "&limit=1&userAttributes.urlPath=" +
         location.pathname || "/";
+        const divRef = useRef<HTMLDivElement>(undefined);
+
 
     useServerMount$(async () => {
       const response = await fetch(apiUrl);
       store.resp = await response.json();
     });
 
-    return <div dangerouslySetInnerHTML={store.resp.html} />;
+    useClientEffect$(() => {
+      if (divRef.current) {
+        divRef.current.outerHTML = store.resp.html;
+      }
+    });
+
+    return <div ref={divRef} />;
   } else {
     const builderContentRsrc = useResource$<any>(() => {
       return getContent({
@@ -47,8 +60,7 @@ export default component$(() => {
     });
 
     return (
-      <div>
-        <div>
+ 
           <Resource
             value={builderContentRsrc}
             onPending={() => <div>Loading...</div>}
@@ -60,8 +72,8 @@ export default component$(() => {
               />
             )}
           />
-        </div>
-      </div>
     );
   }
 });
+
+export default pageComponent;

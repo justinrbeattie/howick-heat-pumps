@@ -1,0 +1,36 @@
+:root {
+    --page-grid-gap: 0.5rem;
+    --page-grid-columns: [left-gutter] 12.5vw [col-1] 1fr [col-2] 1fr [col-3] 1fr
+      [col-4] 1fr [col-5] 1fr [col-6] 1fr [col-7] 1fr [col-8] 1fr [ col-9] 1fr
+      [col-10] 1fr [col-11] 1fr [col-12] 1fr [right-gutter] 12.5vw;
+  }
+  
+  section {
+    display: grid;
+    position: relative;
+    grid-template-columns: var(--page-grid-columns);
+    grid-auto-rows: minmax(70px, calc(10vh - var(--page-grid-gap)));
+    gap: var(--page-grid-gap);
+    padding: calc(var(--page-grid-gap) / 2) 0;
+    width: 100vw;
+  }
+  
+  section:before {
+    content: "";
+    grid-column: left-gutter;
+    background: green;
+    width: 100%;
+    height: calc(100% - var(--page-grid-gap));
+    position: absolute;
+    top: calc(var(--page-grid-gap) / 2);
+  }
+  
+  section:after {
+    content: "";
+    grid-column: right-gutter;
+    background: green;
+    width: 100%;
+    height: calc(100% - var(--page-grid-gap));
+    position: absolute;
+    top: calc(var(--page-grid-gap) / 2);
+  }
