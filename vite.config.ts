@@ -3,7 +3,8 @@ import { qwikVite } from "@builder.io/qwik/optimizer";
 import { qwikCity } from "@builder.io/qwik-city/vite";
 import tsconfigPaths from "vite-tsconfig-paths";
 import netlifyEdge from "@netlify/vite-plugin-netlify-edge";
-
+import postcssNested from "postcss-nested";
+import autoprefixer from "autoprefixer";
 export default defineConfig(() => {
   return {
     plugins: [
