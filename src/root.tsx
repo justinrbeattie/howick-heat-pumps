@@ -21,6 +21,7 @@ export default component$(() => {
       <body lang="en">
         <RouterOutlet />
         <ServiceWorkerRegister />
+
         <script async src="./webcomponents.js"></script>
       </body>
 
