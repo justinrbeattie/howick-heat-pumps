@@ -37,6 +37,7 @@
   }
 
   .content {
+    --grid-span:10;
     --grid-column: col-1 / col-12;
     --grid-row: 1 / span var(--grid-span);
     grid-column: var(--grid-column);
