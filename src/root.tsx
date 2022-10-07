@@ -15,6 +15,7 @@ export default component$(() => {
     <QwikCity>
       <head>
         <meta charSet="utf-8" />
+        <script async src="https://cdn.builder.io/js/webcomponents"></script>
         <RouterHead />
       </head>
       <body lang="en">
