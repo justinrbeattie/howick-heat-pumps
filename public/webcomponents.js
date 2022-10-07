@@ -2,7 +2,7 @@ class TextContent extends HTMLDivElement {
     resizeObserver;
     constructor() {
       super();
-      this.adjustGridRows();
+
       this.resizeObserver = new ResizeObserver((entries) => {
         for (const entry of entries) {
           this.adjustGridRows();
@@ -10,6 +10,10 @@ class TextContent extends HTMLDivElement {
       });
       this.resizeObserver.observe(this);
     }
+
+    connectedCallback() {
+        this.adjustGridRows();
+      }
     disconnectedCallback() {
       this.resizeObserver.disconnect();
     }
