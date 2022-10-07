@@ -36,3 +36,16 @@
     top: calc(var(--page-grid-gap) / 2);
   }
 
+  .content {
+    --grid-column: col-1 / col-12;
+    --grid-row: 1 / span var(--grid-span);
+    grid-column: var(--grid-column);
+    grid-row: var(--grid-row);
+  
+    background: pink;
+  }
+  
+  .text-content {
+    padding: 1rem;
+  }
+
